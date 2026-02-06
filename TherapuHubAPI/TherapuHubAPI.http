@@ -1,0 +1,6 @@
+@TherapuHubAPI_HostAddress = http://localhost:5260
+
+GET {{TherapuHubAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
