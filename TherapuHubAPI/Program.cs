@@ -148,7 +148,7 @@ app.UseCors("AllowFrontend");
 // Solo redirigir HTTPS en producción, no en desarrollo
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHttpsRedirection();
+    //app.UseHttpsRedirection();
 }
 
 app.Urls.Add("http://0.0.0.0:8080");
