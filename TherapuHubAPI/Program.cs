@@ -136,11 +136,12 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TherapuHub API v1");
+    c.RoutePrefix = "swagger";
+});
 
 // CORS debe estar antes de UseHttpsRedirection para que funcione correctamente
 app.UseCors("AllowFrontend");
