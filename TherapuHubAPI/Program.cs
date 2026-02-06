@@ -151,6 +151,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.Urls.Add("http://0.0.0.0:8080");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
