@@ -19,6 +19,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+Console.WriteLine("========== DEBUG CONNECTION STRING ==========");
+Console.WriteLine(connectionString ?? "CONNECTION STRING ES NULL");
+Console.WriteLine("=============================================");
+
 builder.Services.AddDbContext<ContextDB>(options =>
     options.UseSqlServer(connectionString));
 
