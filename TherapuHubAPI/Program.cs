@@ -87,10 +87,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:8080", 
+                "http://localhost:8080",
                 "http://localhost:5173",
                 "https://localhost:8080",
-                "https://localhost:5173"
+                "https://localhost:5173",
+                "https://therapyhub-suite.vercel.app"
               )
               .AllowAnyHeader()
               .AllowAnyMethod()
