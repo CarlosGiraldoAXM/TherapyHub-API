@@ -19,11 +19,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-Console.WriteLine("========== DEBUG CONNECTION STRING ==========");
-Console.WriteLine(connectionString ?? "CONNECTION STRING ES NULL");
-Console.WriteLine("=============================================");
-
 builder.Services.AddDbContext<ContextDB>(options =>
     options.UseSqlServer(connectionString));
 
@@ -36,6 +31,9 @@ builder.Services.AddScoped<ITipoEventoRepositorio, TipoEventoRepositorio>();
 builder.Services.AddScoped<IEventosRepositorio, EventosRepositorio>();
 builder.Services.AddScoped<IEventoUsuariosRepositorio, EventoUsuariosRepositorio>();
 builder.Services.AddScoped<ICompaniaRepositorio, CompaniaRepositorio>();
+builder.Services.AddScoped<ICompanyChatsRepositorio, CompanyChatsRepositorio>();
+builder.Services.AddScoped<IChatMessagesRepositorio, ChatMessagesRepositorio>();
+builder.Services.AddScoped<IMessageReadsRepositorio, MessageReadsRepositorio>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -45,6 +43,7 @@ builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<ITipoEventoService, TipoEventoService>();
 builder.Services.AddScoped<IEventosService, EventosService>();
 builder.Services.AddScoped<ICompaniaService, CompaniaService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
@@ -91,7 +90,10 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173",
                 "https://localhost:8080",
                 "https://localhost:5173",
-                "https://therapyhub-suite.vercel.app"
+                "http://127.0.0.1:8080",
+                "http://127.0.0.1:5173",
+                "https://127.0.0.1:8080",
+                "https://127.0.0.1:5173"
               )
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -142,12 +144,11 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TherapuHub API v1");
-    c.RoutePrefix = "swagger";
-});
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 // CORS debe estar antes de UseHttpsRedirection para que funcione correctamente
 app.UseCors("AllowFrontend");
@@ -155,10 +156,8 @@ app.UseCors("AllowFrontend");
 // Solo redirigir HTTPS en producción, no en desarrollo
 if (!app.Environment.IsDevelopment())
 {
-    //app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
 }
-
-app.Urls.Add("http://0.0.0.0:8080");
 
 app.UseAuthentication();
 app.UseAuthorization();

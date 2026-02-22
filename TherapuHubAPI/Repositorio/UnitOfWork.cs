@@ -9,6 +9,9 @@ public interface IUnitOfWork : IDisposable
     ITipoEventoRepositorio EventTypes { get; }
     IEventosRepositorio Events { get; }
     IEventoUsuariosRepositorio EventoUsuarios { get; }
+    ICompanyChatsRepositorio CompanyChats { get; }
+    IChatMessagesRepositorio ChatMessages { get; }
+    IMessageReadsRepositorio MessageReads { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
@@ -23,6 +26,9 @@ public class UnitOfWork : IUnitOfWork
     public ITipoEventoRepositorio EventTypes { get; private set; }
     public IEventosRepositorio Events { get; private set; }
     public IEventoUsuariosRepositorio EventoUsuarios { get; private set; }
+    public ICompanyChatsRepositorio CompanyChats { get; private set; }
+    public IChatMessagesRepositorio ChatMessages { get; private set; }
+    public IMessageReadsRepositorio MessageReads { get; private set; }
 
     public UnitOfWork(ContextDB context)
     {
@@ -30,6 +36,9 @@ public class UnitOfWork : IUnitOfWork
         EventTypes = new TipoEventoRepositorio(_context);
         Events = new EventosRepositorio(_context);
         EventoUsuarios = new EventoUsuariosRepositorio(_context);
+        CompanyChats = new CompanyChatsRepositorio(_context);
+        ChatMessages = new ChatMessagesRepositorio(_context);
+        MessageReads = new MessageReadsRepositorio(_context);
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

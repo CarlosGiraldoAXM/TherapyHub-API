@@ -66,6 +66,7 @@ public class AuthService : IAuthService
 
         return new LoginResponseDto
         {
+            Id = usuario.Id,
             Token = token,
             Correo = usuario.Email,
             Nombre = usuario.FullName,

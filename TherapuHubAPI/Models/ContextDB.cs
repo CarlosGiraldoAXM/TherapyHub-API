@@ -15,11 +15,15 @@ public partial class ContextDB : DbContext
     {
     }
 
+    public virtual DbSet<ChatMessages> ChatMessages { get; set; }
+
     public virtual DbSet<ClientStatuses> ClientStatuses { get; set; }
 
     public virtual DbSet<Clients> Clients { get; set; }
 
     public virtual DbSet<Companies> Companies { get; set; }
+
+    public virtual DbSet<CompanyChats> CompanyChats { get; set; }
 
     public virtual DbSet<EventRecurrence> EventRecurrence { get; set; }
 
@@ -29,13 +33,43 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<Events> Events { get; set; }
 
+    public virtual DbSet<FileTypes> FileTypes { get; set; }
+
+    public virtual DbSet<Files> Files { get; set; }
+
+    public virtual DbSet<Folders> Folders { get; set; }
+
     public virtual DbSet<JobTitles> JobTitles { get; set; }
 
     public virtual DbSet<Menus> Menus { get; set; }
 
+    public virtual DbSet<MessageReads> MessageReads { get; set; }
+
+    public virtual DbSet<NotePriorities> NotePriorities { get; set; }
+
+    public virtual DbSet<NoteTypes> NoteTypes { get; set; }
+
+    public virtual DbSet<Notes> Notes { get; set; }
+
     public virtual DbSet<Programs> Programs { get; set; }
 
     public virtual DbSet<Reminders> Reminders { get; set; }
+
+    public virtual DbSet<Staff> Staff { get; set; }
+
+    public virtual DbSet<StaffDocumentTypes> StaffDocumentTypes { get; set; }
+
+    public virtual DbSet<StaffDocuments> StaffDocuments { get; set; }
+
+    public virtual DbSet<StaffStatus> StaffStatus { get; set; }
+
+    public virtual DbSet<StaffTimeOff> StaffTimeOff { get; set; }
+
+    public virtual DbSet<StorageEntities> StorageEntities { get; set; }
+
+    public virtual DbSet<TimeOffStatus> TimeOffStatus { get; set; }
+
+    public virtual DbSet<TimeOffTypes> TimeOffTypes { get; set; }
 
     public virtual DbSet<UserTypeMenus> UserTypeMenus { get; set; }
 
@@ -49,6 +83,15 @@ public partial class ContextDB : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ChatMessages>(entity =>
+        {
+            entity.HasIndex(e => new { e.ChatId, e.CreatedAt }, "IX_ChatMessages_ChatId").IsDescending(false, true);
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("(getdate())");
+        });
+
         modelBuilder.Entity<ClientStatuses>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__ClientSt__3214EC075CFFB672");
@@ -92,6 +135,19 @@ public partial class ContextDB : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.TaxId)
                 .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<CompanyChats>(entity =>
+        {
+            entity.HasIndex(e => e.CompanyId, "IX_CompanyChats_CompanyId");
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name)
+                .HasMaxLength(150)
                 .IsUnicode(false);
         });
 
@@ -150,6 +206,32 @@ public partial class ContextDB : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<FileTypes>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<Files>(entity =>
+        {
+            entity.Property(e => e.BlobUrl).HasMaxLength(1000);
+            entity.Property(e => e.FileName).HasMaxLength(255);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.UploadedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<Folders>(entity =>
+        {
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(200);
+        });
+
         modelBuilder.Entity<JobTitles>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__JobTitle__3214EC076C5254CF");
@@ -177,6 +259,41 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.Title).HasMaxLength(100);
         });
 
+        modelBuilder.Entity<MessageReads>(entity =>
+        {
+            entity.HasIndex(e => e.MessageId, "IX_MessageReads_MessageId");
+
+            entity.HasIndex(e => e.UserId, "IX_MessageReads_UserId");
+
+            entity.Property(e => e.ReadAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<NotePriorities>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<NoteTypes>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<Notes>(entity =>
+        {
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.DueDate).HasPrecision(0);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Title).HasMaxLength(200);
+        });
+
         modelBuilder.Entity<Programs>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Programs__3214EC074FF65D75");
@@ -195,6 +312,72 @@ public partial class ContextDB : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<Staff>(entity =>
+        {
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Phone)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<StaffDocumentTypes>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<StaffDocuments>(entity =>
+        {
+            entity.Property(e => e.BlobUrl).HasMaxLength(1000);
+            entity.Property(e => e.FileName).HasMaxLength(255);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.UploadedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<StaffStatus>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<StaffTimeOff>(entity =>
+        {
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<StorageEntities>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<TimeOffStatus>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<TimeOffTypes>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<UserTypeMenus>(entity =>
