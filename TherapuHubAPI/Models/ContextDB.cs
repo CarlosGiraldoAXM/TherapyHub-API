@@ -61,6 +61,8 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<StaffDocuments> StaffDocuments { get; set; }
 
+    public virtual DbSet<StaffRoles> StaffRoles { get; set; }
+
     public virtual DbSet<StaffStatus> StaffStatus { get; set; }
 
     public virtual DbSet<StaffTimeOff> StaffTimeOff { get; set; }
@@ -320,7 +322,13 @@ public partial class ContextDB : DbContext
                 .HasPrecision(0)
                 .HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.FirstName)
+                .HasMaxLength(150)
+                .HasDefaultValue("");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.LastName)
+                .HasMaxLength(150)
+                .HasDefaultValue("");
             entity.Property(e => e.Phone)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -341,6 +349,14 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.UploadedAt)
                 .HasPrecision(0)
                 .HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<StaffRoles>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<StaffStatus>(entity =>

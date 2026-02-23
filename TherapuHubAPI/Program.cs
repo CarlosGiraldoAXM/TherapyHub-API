@@ -34,6 +34,9 @@ builder.Services.AddScoped<ICompaniaRepositorio, CompaniaRepositorio>();
 builder.Services.AddScoped<ICompanyChatsRepositorio, CompanyChatsRepositorio>();
 builder.Services.AddScoped<IChatMessagesRepositorio, ChatMessagesRepositorio>();
 builder.Services.AddScoped<IMessageReadsRepositorio, MessageReadsRepositorio>();
+builder.Services.AddScoped<IStaffRepositorio, StaffRepositorio>();
+builder.Services.AddScoped<IStaffStatusRepositorio, StaffStatusRepositorio>();
+builder.Services.AddScoped<IStaffRolesRepositorio, StaffRolesRepositorio>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -44,6 +47,7 @@ builder.Services.AddScoped<ITipoEventoService, TipoEventoService>();
 builder.Services.AddScoped<IEventosService, EventosService>();
 builder.Services.AddScoped<ICompaniaService, CompaniaService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
