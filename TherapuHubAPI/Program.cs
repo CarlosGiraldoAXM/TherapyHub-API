@@ -97,7 +97,8 @@ builder.Services.AddCors(options =>
                 "http://127.0.0.1:8080",
                 "http://127.0.0.1:5173",
                 "https://127.0.0.1:8080",
-                "https://127.0.0.1:5173"
+                "https://127.0.0.1:5173",
+                "https://therapyhub-suite.vercel.app"
               )
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -148,11 +149,19 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TherapuHub API v1");
+    c.RoutePrefix = "swagger";
+});
+
+// Configure the HTTP request pipeline.
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI();
+//}
 
 // CORS debe estar antes de UseHttpsRedirection para que funcione correctamente
 app.UseCors("AllowFrontend");
@@ -160,8 +169,10 @@ app.UseCors("AllowFrontend");
 // Solo redirigir HTTPS en producción, no en desarrollo
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHttpsRedirection();
+    //app.UseHttpsRedirection();
 }
+
+app.Urls.Add("http://0.0.0.0:8080");
 
 app.UseAuthentication();
 app.UseAuthorization();
