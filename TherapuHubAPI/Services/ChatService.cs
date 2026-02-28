@@ -98,7 +98,7 @@ public class ChatService : IChatService
                 IsEdited = m.IsEdited,
                 IsDeleted = m.IsDeleted
             };
-            dto.ReadBy = reads.Where(r => r.MessageId == m.Id).Select(r => new MessageReadInfoDto
+            dto.ReadBy = reads.Where(r => r.MessageId == m.Id && r.UserId != m.SenderUserId).Select(r => new MessageReadInfoDto
             {
                 UserId = r.UserId,
                 UserName = users.TryGetValue(r.UserId, out var ru) ? ru.FullName : "",

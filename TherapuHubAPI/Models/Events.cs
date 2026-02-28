@@ -26,4 +26,6 @@ public partial class Events
     public DateTime CreatedAt { get; set; }
 
     public int CompanyId { get; set; }
+
+    public int? StaffId { get; set; }
 }

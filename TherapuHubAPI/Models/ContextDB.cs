@@ -206,6 +206,7 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .IsUnicode(false);
+            entity.Property(e => e.StaffId).IsRequired(false);
         });
 
         modelBuilder.Entity<FileTypes>(entity =>

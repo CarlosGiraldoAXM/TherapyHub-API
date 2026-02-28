@@ -8,6 +8,7 @@ public interface IUnitOfWork : IDisposable
 {
     ITipoEventoRepositorio EventTypes { get; }
     IEventosRepositorio Events { get; }
+    IEventRecurrenceRepositorio EventRecurrences { get; }
     IEventoUsuariosRepositorio EventoUsuarios { get; }
     ICompanyChatsRepositorio CompanyChats { get; }
     IChatMessagesRepositorio ChatMessages { get; }
@@ -25,6 +26,7 @@ public class UnitOfWork : IUnitOfWork
 
     public ITipoEventoRepositorio EventTypes { get; private set; }
     public IEventosRepositorio Events { get; private set; }
+    public IEventRecurrenceRepositorio EventRecurrences { get; private set; }
     public IEventoUsuariosRepositorio EventoUsuarios { get; private set; }
     public ICompanyChatsRepositorio CompanyChats { get; private set; }
     public IChatMessagesRepositorio ChatMessages { get; private set; }
@@ -35,6 +37,7 @@ public class UnitOfWork : IUnitOfWork
         _context = context;
         EventTypes = new TipoEventoRepositorio(_context);
         Events = new EventosRepositorio(_context);
+        EventRecurrences = new EventRecurrenceRepositorio(_context);
         EventoUsuarios = new EventoUsuariosRepositorio(_context);
         CompanyChats = new CompanyChatsRepositorio(_context);
         ChatMessages = new ChatMessagesRepositorio(_context);

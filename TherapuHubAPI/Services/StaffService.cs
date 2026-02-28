@@ -72,9 +72,136 @@ public class StaffService : IStaffService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Staff created with Id: {Id}", staff.Id);
+
+        if (request.DateOfBirth.HasValue)
+        {
+            try
+            {
+                await CreateBirthdayEventAsync(staff, request.DateOfBirth.Value, companyId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create birthday event for staff Id: {Id}", staff.Id);
+            }
+        }
+
         var statuses = (await _statusRepositorio.GetAllAsync()).ToList();
         var roles = (await _rolesRepositorio.GetAllAsync()).ToList();
         return MapToDto(staff, statuses, roles);
+    }
+
+    private async Task CreateBirthdayEventAsync(Staff staff, DateOnly dateOfBirth, int companyId)
+    {
+        // Find or create the "Birthday" event type
+        var birthdayType = await _unitOfWork.EventTypes.FirstOrDefaultAsync(
+            t => t.Name.ToLower() == "birthday");
+
+        if (birthdayType == null)
+        {
+            birthdayType = new EventTypes
+            {
+                Name = "Birthday",
+                Color = "#ec4899",
+                Icon = "cake",
+                IsActive = true
+            };
+            await _unitOfWork.EventTypes.AddAsync(birthdayType);
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Created 'Birthday' event type with Id: {Id}", birthdayType.Id);
+        }
+
+        // Calculate the next upcoming birthday date
+        var birthdayDate = GetNextBirthdayDate(dateOfBirth);
+
+        var birthdayEvent = new Events
+        {
+            Title = $"{staff.FirstName} {staff.LastName}'s Birthday",
+            Description = $"Birthday of {staff.FirstName} {staff.LastName}",
+            StartDate = birthdayDate,
+            EndDate = birthdayDate.AddDays(1).AddSeconds(-1),
+            IsAllDay = true,
+            EventTypeId = birthdayType.Id,
+            IsGlobal = true,
+            Status = "active",
+            CompanyId = companyId,
+            CreatedAt = DateTime.UtcNow,
+            StaffId = staff.Id
+        };
+
+        await _unitOfWork.Events.AddAsync(birthdayEvent);
+        await _unitOfWork.SaveChangesAsync();
+
+        var recurrence = new EventRecurrence
+        {
+            EventId = birthdayEvent.Id,
+            RecurrenceType = "yearly",
+            Interval = 1,
+            DayOfWeek = null,
+            EndDate = null
+        };
+
+        await _unitOfWork.EventRecurrences.AddAsync(recurrence);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Birthday event created for staff Id: {StaffId}, EventId: {EventId}, next birthday: {Date}",
+            staff.Id, birthdayEvent.Id, birthdayDate.ToString("yyyy-MM-dd"));
+    }
+
+    private async Task UpdateBirthdayEventAsync(Staff staff, DateOnly? newDateOfBirth, int companyId)
+    {
+        var existingEvent = await _unitOfWork.Events.FirstOrDefaultAsync(
+            e => e.StaffId == staff.Id && e.CompanyId == companyId);
+
+        if (existingEvent == null)
+        {
+            // No birthday event exists yet — create one if a date of birth was provided
+            if (newDateOfBirth.HasValue)
+            {
+                await CreateBirthdayEventAsync(staff, newDateOfBirth.Value, companyId);
+            }
+            return;
+        }
+
+        // Update the title in case the name changed
+        existingEvent.Title = $"{staff.FirstName} {staff.LastName}'s Birthday";
+        existingEvent.Description = $"Birthday of {staff.FirstName} {staff.LastName}";
+
+        // Update the date if a new date of birth was provided
+        if (newDateOfBirth.HasValue)
+        {
+            var birthdayDate = GetNextBirthdayDate(newDateOfBirth.Value);
+            existingEvent.StartDate = birthdayDate;
+            existingEvent.EndDate = birthdayDate.AddDays(1).AddSeconds(-1);
+        }
+
+        _unitOfWork.Events.Update(existingEvent);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Birthday event updated for staff Id: {StaffId}, EventId: {EventId}", staff.Id, existingEvent.Id);
+    }
+
+    private static DateTime GetNextBirthdayDate(DateOnly dateOfBirth)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var year = today.Year;
+
+        // Handle Feb 29 on non-leap years by using Feb 28
+        var day = dateOfBirth.Day;
+        if (dateOfBirth.Month == 2 && day == 29 && !DateTime.IsLeapYear(year))
+            day = 28;
+
+        var thisYearBirthday = new DateOnly(year, dateOfBirth.Month, day);
+
+        if (thisYearBirthday >= today)
+            return thisYearBirthday.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        year++;
+        day = dateOfBirth.Day;
+        if (dateOfBirth.Month == 2 && day == 29 && !DateTime.IsLeapYear(year))
+            day = 28;
+
+        return new DateOnly(year, dateOfBirth.Month, day).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
     }
 
     public async Task<StaffResponseDto?> UpdateAsync(int id, UpdateStaffRequestDto request, int companyId)
@@ -99,6 +226,15 @@ public class StaffService : IStaffService
 
         _staffRepositorio.Update(staff);
         await _unitOfWork.SaveChangesAsync();
+
+        try
+        {
+            await UpdateBirthdayEventAsync(staff, request.DateOfBirth, companyId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update birthday event for staff Id: {Id}", staff.Id);
+        }
 
         var statuses = (await _statusRepositorio.GetAllAsync()).ToList();
         var roles = (await _rolesRepositorio.GetAllAsync()).ToList();

@@ -73,6 +73,10 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IdTipoEvento, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.Nombre, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.Icono, opt => opt.MapFrom(src => src.Icon));
+        CreateMap<CreateEventTypeRequestDto, EventTypes>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
+        CreateMap<UpdateEventTypeRequestDto, EventTypes>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
 
         // Events: Model (EN) <-> DTO (ES)
         CreateMap<Events, EventoResponseDto>()
