@@ -10,17 +10,20 @@ namespace TherapuHubAPI.Services;
 public class CompaniaService : ICompaniaService
 {
     private readonly ICompaniaRepositorio _companiaRepositorio;
+    private readonly IUsuarioRepositorio _usuarioRepositorio;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ILogger<CompaniaService> _logger;
 
     public CompaniaService(
         ICompaniaRepositorio companiaRepositorio,
+        IUsuarioRepositorio usuarioRepositorio,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ILogger<CompaniaService> logger)
     {
         _companiaRepositorio = companiaRepositorio;
+        _usuarioRepositorio = usuarioRepositorio;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _logger = logger;
@@ -84,6 +87,7 @@ public class CompaniaService : ICompaniaService
         compania.Name = request.Nombre;
         compania.TaxId = request.Nit;
         compania.IsActive = request.IsActive;
+        compania.UserLimit = request.UserLimit;
 
         _companiaRepositorio.Update(compania);
         await _unitOfWork.SaveChangesAsync();
@@ -92,7 +96,7 @@ public class CompaniaService : ICompaniaService
         return _mapper.Map<CompaniaResponseDto>(compania);
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int deleteUserId)
     {
         _logger.LogInformation("Eliminando compañía Id: {Id}", id);
 
@@ -103,10 +107,21 @@ public class CompaniaService : ICompaniaService
             return false;
         }
 
-        _companiaRepositorio.Remove(compania);
+        var tieneUsuarios = await _usuarioRepositorio.HasUsersInCompanyAsync(id);
+        if (tieneUsuarios)
+        {
+            _logger.LogWarning("Cannot delete company Id: {Id} because it has active users assigned.", id);
+            throw new InvalidOperationException("Cannot delete the company because it has users assigned. Delete the users first.");
+        }
+
+        compania.IsDeleted = true;
+        compania.DeletedAt = DateTime.Now;
+        compania.DeleteUserId = deleteUserId;
+
+        _companiaRepositorio.Update(compania);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Company deleted Id: {Id}", id);
+        _logger.LogInformation("Company soft deleted. Id: {Id}", id);
         return true;
     }
 

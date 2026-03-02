@@ -17,6 +17,10 @@ public class CreateEventoRequestDto
     [JsonPropertyName("esGlobal")]
     public bool IsGlobal { get; set; }
 
+    public string? OtherType { get; set; }
+
+    public bool? IsPrivate { get; set; }
+
     [JsonPropertyName("usuariosIds")]
     public List<int>? UsuariosIds { get; set; }
 }

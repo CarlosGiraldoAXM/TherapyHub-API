@@ -230,18 +230,29 @@ public class UsuariosController : ControllerBase
     }
 
     /// <summary>
-    /// Elimina (desactiva) un usuario
+    /// Elimina un usuario (soft delete)
     /// </summary>
     /// <param name="id">ID del usuario</param>
     /// <returns>Resultado de la operación</returns>
     [HttpDelete("{id}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
     {
         try
         {
-            var result = await _usuarioService.DeleteAsync(id);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int currentUserId))
+            {
+                return Unauthorized(ApiResponse<object>.ErrorResponse(
+                    "User could not be determined. Please log in again.",
+                    new List<string> { "Invalid or missing user context" },
+                    401));
+            }
+
+            var result = await _usuarioService.DeleteAsync(id, currentUserId);
 
             if (!result)
             {

@@ -14,6 +14,8 @@ public class MenuResponseDto
     [JsonPropertyName("activo")]
     public bool IsActive { get; set; }
 
+    public bool IsSystem { get; set; }
+
     [JsonPropertyName("fechaCreacion")]
     public DateTime CreatedAt { get; set; }
 

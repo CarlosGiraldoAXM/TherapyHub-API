@@ -21,7 +21,7 @@ public class ChatMessagesRepositorio : Repository<ChatMessages>, IChatMessagesRe
     public async Task<IEnumerable<ChatMessages>> GetByChatIdOrderedAsync(int chatId)
     {
         return await _contextDb.ChatMessages
-            .Where(m => m.ChatId == chatId && !m.IsDeleted)
+            .Where(m => m.ChatId == chatId)
             .OrderBy(m => m.CreatedAt)
             .ToListAsync();
     }

@@ -14,4 +14,6 @@ public partial class EventTypes
     public string? Icon { get; set; }
 
     public bool IsActive { get; set; }
+
+    public bool IsSystem { get; set; }
 }

@@ -14,4 +14,12 @@ public partial class Companies
     public bool IsActive { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public int? UserLimit { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public int? DeleteUserId { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
 }

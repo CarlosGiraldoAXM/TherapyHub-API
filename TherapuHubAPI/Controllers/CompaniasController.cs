@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TherapuHubAPI.DTOs.Common;
 using TherapuHubAPI.DTOs.Requests.Companies;
@@ -155,16 +157,28 @@ public class CompaniasController : ControllerBase
     }
 
     /// <summary>
-    /// Deletes a company
+    /// Deletes a company (soft delete). Fails if the company has active users assigned.
     /// </summary>
     [HttpDelete("{id}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
     {
         try
         {
-            var result = await _companiaService.DeleteAsync(id);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int currentUserId))
+            {
+                return Unauthorized(ApiResponse<object>.ErrorResponse(
+                    "User could not be determined. Please log in again.",
+                    new List<string> { "Invalid or missing user context" },
+                    401));
+            }
+
+            var result = await _companiaService.DeleteAsync(id, currentUserId);
             if (!result)
             {
                 return NotFound(ApiResponse<object>.NotFoundResponse(
@@ -174,6 +188,14 @@ public class CompaniasController : ControllerBase
                 null,
                 "Company deleted successfully",
                 200));
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Validation error when deleting company with Id: {Id}", id);
+            return Conflict(ApiResponse<object>.ErrorResponse(
+                ex.Message,
+                new List<string> { ex.Message },
+                409));
         }
         catch (Exception ex)
         {

@@ -122,10 +122,10 @@ public class StaffService : IStaffService
             IsAllDay = true,
             EventTypeId = birthdayType.Id,
             IsGlobal = true,
-            Status = "active",
             CompanyId = companyId,
             CreatedAt = DateTime.UtcNow,
-            StaffId = staff.Id
+            StaffId = staff.Id,
+            IsPrivate = false
         };
 
         await _unitOfWork.Events.AddAsync(birthdayEvent);

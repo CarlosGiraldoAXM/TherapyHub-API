@@ -18,4 +18,7 @@ public class UsuarioResponseDto
 
     [JsonPropertyName("activo")]
     public bool IsActive { get; set; }
+
+    [JsonPropertyName("companiaId")]
+    public int CompanyId { get; set; }
 }

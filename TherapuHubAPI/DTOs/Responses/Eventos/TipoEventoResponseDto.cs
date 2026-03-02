@@ -11,4 +11,6 @@ public class TipoEventoResponseDto
 
     [JsonPropertyName("activo")]
     public bool IsActive { get; set; }
+
+    public bool IsSystem { get; set; }
 }

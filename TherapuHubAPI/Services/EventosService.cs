@@ -82,7 +82,6 @@ public class EventosService : IEventosService
         {
             var evento = _mapper.Map<Events>(request);
             evento.CreatedAt = DateTime.Now;
-            evento.Status = "IsActive";
             evento.CompanyId = user.CompanyId;
 
             await _unitOfWork.Events.AddAsync(evento);

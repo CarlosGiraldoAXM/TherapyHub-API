@@ -22,4 +22,10 @@ public partial class Users
     public int CompanyId { get; set; }
 
     public bool MustResetPassword { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public int? DeleteUserId { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
 }

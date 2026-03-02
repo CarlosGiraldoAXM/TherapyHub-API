@@ -9,6 +9,7 @@ public class CompaniaResponseDto
 
     public string Nombre { get; set; } = null!;
     public string? Nit { get; set; }
+    public int? UserLimit { get; set; }
 
     [JsonPropertyName("activo")]
     public bool IsActive { get; set; }

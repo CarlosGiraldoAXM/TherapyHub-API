@@ -21,11 +21,13 @@ public partial class Events
 
     public bool IsGlobal { get; set; }
 
-    public string Status { get; set; } = null!;
-
     public DateTime CreatedAt { get; set; }
 
     public int CompanyId { get; set; }
 
     public int? StaffId { get; set; }
+
+    public bool? IsPrivate { get; set; }
+
+    public string? OtherType { get; set; }
 }

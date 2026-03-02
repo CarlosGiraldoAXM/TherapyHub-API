@@ -9,4 +9,5 @@ public interface IUsuarioRepositorio : IRepository<Users>
     new Task<Users?> GetByIdAsync(int id);
     new Task<IEnumerable<Users>> GetAllAsync();
     Task<int> CountByTipoUsuarioIdAsync(int tipoUsuarioId);
+    Task<bool> HasUsersInCompanyAsync(int companyId);
 }

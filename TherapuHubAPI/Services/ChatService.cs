@@ -185,4 +185,21 @@ public class ChatService : IChatService
         var chatIds = chats.Select(c => c.Id).ToList();
         return await _unitOfWork.ChatMessages.GetUnreadCountForUserAsync(chatIds, currentUserId);
     }
+
+    public async Task<bool> DeleteMessageAsync(long messageId, int currentUserId)
+    {
+        var message = await _unitOfWork.ChatMessages.GetByIdAsync(messageId);
+        if (message == null) return false;
+
+        // Only the sender can delete their own message
+        if (message.SenderUserId != currentUserId) return false;
+
+        message.IsDeleted = true;
+        message.DeleteUserId = currentUserId;
+        message.DeletedAt = DateTime.UtcNow;
+
+        _unitOfWork.ChatMessages.Update(message);
+        await _unitOfWork.SaveChangesAsync();
+        return true;
+    }
 }

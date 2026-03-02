@@ -10,7 +10,7 @@ public interface IUsuarioService
     Task<UsuarioResponseDto?> GetByIdAsync(int id);
     Task<IEnumerable<UsuarioResponseDto>> GetAllAsync(int currentUserId);
     Task<UsuarioResponseDto?> UpdateAsync(int id, UpdateUsuarioRequestDto request);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int deleteUserId);
     Task<bool> ToggleActivoAsync(int id);
     Task SetInitialPasswordAsync(int userId, SetInitialPasswordRequestDto request);
     Task ResetPasswordAsync(int userId);

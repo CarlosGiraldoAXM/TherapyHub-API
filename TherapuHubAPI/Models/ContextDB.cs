@@ -92,6 +92,7 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(3)
                 .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.DeletedAt).HasPrecision(3);
         });
 
         modelBuilder.Entity<ClientStatuses>(entity =>
@@ -132,6 +133,7 @@ public partial class ContextDB : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Companie__3214EC073FCE0C3C");
 
             entity.Property(e => e.CreatedAt).HasPrecision(0);
+            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
             entity.Property(e => e.Name)
                 .HasMaxLength(150)
                 .IsUnicode(false);
@@ -198,15 +200,13 @@ public partial class ContextDB : DbContext
                 .HasMaxLength(500)
                 .IsUnicode(false);
             entity.Property(e => e.EndDate).HasPrecision(0);
+            entity.Property(e => e.OtherType)
+                .HasMaxLength(250)
+                .IsUnicode(false);
             entity.Property(e => e.StartDate).HasPrecision(0);
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasDefaultValue("Active");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .IsUnicode(false);
-            entity.Property(e => e.StaffId).IsRequired(false);
         });
 
         modelBuilder.Entity<FileTypes>(entity =>
@@ -425,6 +425,7 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.FullName).HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);

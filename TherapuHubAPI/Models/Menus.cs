@@ -20,4 +20,6 @@ public partial class Menus
     public DateTime CreatedAt { get; set; }
 
     public int? ParentId { get; set; }
+
+    public bool IsSystem { get; set; }
 }

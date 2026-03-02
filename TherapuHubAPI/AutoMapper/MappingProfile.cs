@@ -56,6 +56,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Ruta, opt => opt.MapFrom(src => src.Route))
             .ForMember(dest => dest.Icono, opt => opt.MapFrom(src => src.Icon))
             .ForMember(dest => dest.Orden, opt => opt.MapFrom(src => src.SortOrder))
+            .ForMember(dest => dest.IsSystem, opt => opt.MapFrom(src => src.IsSystem))
             .ForMember(dest => dest.Children, opt => opt.Ignore());
         CreateMap<CreateMenuRequestDto, Menus>()
             .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Titulo))
@@ -86,7 +87,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.FechaInicio, opt => opt.MapFrom(src => src.StartDate))
             .ForMember(dest => dest.FechaFin, opt => opt.MapFrom(src => src.EndDate))
             .ForMember(dest => dest.IdTipoEvento, opt => opt.MapFrom(src => src.EventTypeId))
-            .ForMember(dest => dest.Estado, opt => opt.MapFrom(src => src.Status))
             .ForMember(dest => dest.TipoEventoNombre, opt => opt.Ignore())
             .ForMember(dest => dest.TipoEventoColor, opt => opt.Ignore());
         CreateMap<CreateEventoRequestDto, Events>()
@@ -101,8 +101,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Descripcion))
             .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.FechaInicio))
             .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.FechaFin))
-            .ForMember(dest => dest.EventTypeId, opt => opt.MapFrom(src => src.IdTipoEvento))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Estado));
+            .ForMember(dest => dest.EventTypeId, opt => opt.MapFrom(src => src.IdTipoEvento));
 
         // Companies: Model (EN) <-> DTO (ES)
         CreateMap<Companies, CompaniaResponseDto>()

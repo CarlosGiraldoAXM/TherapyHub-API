@@ -18,4 +18,8 @@ public partial class ChatMessages
     public bool IsEdited { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public int? DeleteUserId { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
 }

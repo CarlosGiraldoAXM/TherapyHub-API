@@ -20,7 +20,9 @@ public class EventoResponseDto
     [JsonPropertyName("esGlobal")]
     public bool IsGlobal { get; set; }
 
-    public string Estado { get; set; } = null!;
+    public string? OtherType { get; set; }
+
+    public bool? IsPrivate { get; set; }
 
     [JsonPropertyName("fechaCreacion")]
     public DateTime CreatedAt { get; set; }

@@ -7,6 +7,7 @@ using TherapuHubAPI.DTOs.Requests.Auth;
 using TherapuHubAPI.DTOs.Responses.Auth;
 using TherapuHubAPI.Repositorio;
 using TherapuHubAPI.Repositorio.IRepositorio;
+using TherapuHubAPI.Models;
 using TherapuHubAPI.Services.IServices;
 
 namespace TherapuHubAPI.Services.Implementations;
@@ -15,17 +16,20 @@ public class AuthService : IAuthService
 {
     private readonly IUsuarioRepositorio _usuarioRepositorio;
     private readonly ITipoUsuarioRepositorio _tipoUsuarioRepositorio;
+    private readonly ICompaniaRepositorio _companiaRepositorio;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         IUsuarioRepositorio usuarioRepositorio,
         ITipoUsuarioRepositorio tipoUsuarioRepositorio,
+        ICompaniaRepositorio companiaRepositorio,
         IConfiguration configuration,
         ILogger<AuthService> logger)
     {
         _usuarioRepositorio = usuarioRepositorio;
         _tipoUsuarioRepositorio = tipoUsuarioRepositorio;
+        _companiaRepositorio = companiaRepositorio;
         _configuration = configuration;
         _logger = logger;
     }
@@ -46,6 +50,13 @@ public class AuthService : IAuthService
         {
             _logger.LogWarning("Intento de login fallido: Usuario inactivo - {Correo}", request.Correo);
             throw new UnauthorizedAccessException("The user is not active in the system");
+        }
+
+        var compania = await _companiaRepositorio.GetByIdCompaniaAsync(usuario.CompanyId);
+        if (compania != null && !compania.IsActive)
+        {
+            _logger.LogWarning("Login failed: Company is inactive for user {Correo}. CompanyId: {CompanyId}", request.Correo, usuario.CompanyId);
+            throw new UnauthorizedAccessException("The company associated with this account is not active");
         }
 
         if (!BCrypt.Net.BCrypt.Verify(request.Contrasena, usuario.PasswordHash))

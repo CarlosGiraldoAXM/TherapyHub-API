@@ -63,6 +63,20 @@ public class UsuarioService : IUsuarioService
 
         _logger.LogInformation("Creating new user with email: {Correo}, company: {CompanyId}", request.Correo, targetCompaniaId);
 
+        // Check UserLimit for the target company
+        var targetCompania = await _companiaRepositorio.GetByIdCompaniaAsync(targetCompaniaId);
+        if (targetCompania?.UserLimit.HasValue == true)
+        {
+            var currentUserCount = await _usuarioRepositorio.CountAsync(u => u.CompanyId == targetCompaniaId && !u.IsDeleted);
+            if (currentUserCount >= targetCompania.UserLimit.Value)
+            {
+                _logger.LogWarning("User limit reached for company {CompanyId}. Limit: {Limit}, Current: {Count}",
+                    targetCompaniaId, targetCompania.UserLimit.Value, currentUserCount);
+                throw new InvalidOperationException(
+                    $"Cannot create user. Company '{targetCompania.Name}' has reached its user limit of {targetCompania.UserLimit.Value}.");
+            }
+        }
+
         var usuarioExistente = await _usuarioRepositorio.GetByCorreoAsync(request.Correo);
         if (usuarioExistente != null)
         {
@@ -243,7 +257,7 @@ public class UsuarioService : IUsuarioService
         return response;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, int deleteUserId)
     {
         _logger.LogInformation("Eliminando usuario con Id: {Id}", id);
 
@@ -254,10 +268,14 @@ public class UsuarioService : IUsuarioService
             return false;
         }
 
-        _usuarioRepositorio.Remove(usuario);
+        usuario.IsDeleted = true;
+        usuario.DeletedAt = DateTime.Now;
+        usuario.DeleteUserId = deleteUserId;
+
+        _usuarioRepositorio.Update(usuario);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Usuario eliminado exitosamente con Id: {Id}", id);
+        _logger.LogInformation("User soft deleted. Id: {Id}", id);
         return true;
     }
 

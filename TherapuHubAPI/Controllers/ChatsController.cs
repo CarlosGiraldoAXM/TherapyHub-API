@@ -121,6 +121,22 @@ public class ChatsController : ControllerBase
         });
     }
 
+    /// <summary>Soft-delete de un mensaje. Solo puede hacerlo el remitente.</summary>
+    [HttpDelete("messages/{messageId:long}")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<object>>> DeleteMessage(long messageId)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+
+        var deleted = await _chatService.DeleteMessageAsync(messageId, currentUserId.Value);
+        if (!deleted)
+            return BadRequest(ApiResponse<object>.ErrorResponse("Cannot delete this message. It may not exist or you are not the sender.", null, 400));
+
+        return Ok(new ApiResponse<object> { Success = true, Message = "Message deleted" });
+    }
+
     /// <summary>Marca mensajes como leídos por el usuario actual.</summary>
     [HttpPost("messages/read")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]

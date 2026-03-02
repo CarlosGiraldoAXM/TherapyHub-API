@@ -9,6 +9,6 @@ public interface ICompaniaService
     Task<CompaniaResponseDto?> GetByIdAsync(int id);
     Task<IEnumerable<CompaniaResponseDto>> GetAllAsync();
     Task<CompaniaResponseDto?> UpdateAsync(int id, UpdateCompaniaRequestDto request);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, int deleteUserId);
     Task<bool> ToggleActivoAsync(int id);
 }
