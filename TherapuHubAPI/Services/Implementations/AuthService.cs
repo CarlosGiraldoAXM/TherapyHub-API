@@ -68,7 +68,7 @@ public class AuthService : IAuthService
         var tipoUsuario = await _tipoUsuarioRepositorio.GetByIdAsync(usuario.UserTypeId);
         var tipoUsuarioNombre = tipoUsuario?.Name ?? string.Empty;
 
-        var token = GenerateJwtToken(usuario, tipoUsuarioNombre);
+        var token = GenerateJwtToken(usuario, tipoUsuarioNombre, tipoUsuario?.IsSystem == true);
 
         const string defaultPassword = "123456";
         bool requiresPasswordReset = usuario.MustResetPassword && request.Contrasena == defaultPassword;
@@ -89,7 +89,7 @@ public class AuthService : IAuthService
         };
     }
 
-    private string GenerateJwtToken(Models.Users usuario, string tipoUsuarioNombre)
+    private string GenerateJwtToken(Models.Users usuario, string tipoUsuarioNombre, bool isSystem)
     {
         var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
         var jwtIssuer = _configuration["Jwt:Issuer"] ?? "TherapuHubAPI";
@@ -108,6 +108,7 @@ public class AuthService : IAuthService
             new Claim("TipoUsuario", tipoUsuarioNombre),
             new Claim(ClaimTypes.Role, tipoUsuarioNombre),
             new Claim("CompanyId", usuario.CompanyId.ToString()),
+            new Claim("IsSystem", isSystem.ToString().ToLower()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

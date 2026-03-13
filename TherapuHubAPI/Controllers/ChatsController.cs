@@ -121,6 +121,37 @@ public class ChatsController : ControllerBase
         });
     }
 
+    /// <summary>Edita el texto de un mensaje. Solo el autor puede hacerlo y dentro de la ventana de tiempo configurada.</summary>
+    [HttpPut("messages/{messageId:long}")]
+    [ProducesResponseType(typeof(ApiResponse<ChatMessageResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ChatMessageResponseDto>>> EditMessage(long messageId, [FromBody] EditChatMessageRequestDto request)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(request?.MessageText))
+            return BadRequest(ApiResponse<ChatMessageResponseDto>.ErrorResponse("El texto del mensaje es requerido.", null, 400));
+
+        var (message, error) = await _chatService.EditMessageAsync(messageId, request, currentUserId.Value);
+
+        if (message == null)
+        {
+            if (error == "Mensaje no encontrado.")
+                return NotFound(ApiResponse<ChatMessageResponseDto>.NotFoundResponse(error));
+
+            return BadRequest(ApiResponse<ChatMessageResponseDto>.ErrorResponse(error!, null, 400));
+        }
+
+        return Ok(new ApiResponse<ChatMessageResponseDto>
+        {
+            Success = true,
+            Data = message,
+            Message = "Mensaje editado correctamente"
+        });
+    }
+
     /// <summary>Soft-delete de un mensaje. Solo puede hacerlo el remitente.</summary>
     [HttpDelete("messages/{messageId:long}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]

@@ -12,4 +12,5 @@ public interface IChatService
     Task MarkMessagesAsReadAsync(MarkMessagesReadRequestDto request, int currentUserId);
     Task<int> GetUnreadMessageCountAsync(int currentUserId);
     Task<bool> DeleteMessageAsync(long messageId, int currentUserId);
+    Task<(ChatMessageResponseDto? Message, string? Error)> EditMessageAsync(long messageId, EditChatMessageRequestDto request, int currentUserId);
 }

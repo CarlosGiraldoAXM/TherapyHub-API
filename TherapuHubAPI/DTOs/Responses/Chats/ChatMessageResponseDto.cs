@@ -25,6 +25,18 @@ public class ChatMessageResponseDto
     [JsonPropertyName("isEdited")]
     public bool IsEdited { get; set; }
 
+    [JsonPropertyName("editedAt")]
+    public DateTime? EditedAt { get; set; }
+
+    [JsonPropertyName("editedUserId")]
+    public int? EditedUserId { get; set; }
+
+    [JsonPropertyName("editedUserName")]
+    public string? EditedUserName { get; set; }
+
+    [JsonPropertyName("canEdit")]
+    public bool CanEdit { get; set; }
+
     [JsonPropertyName("isDeleted")]
     public bool IsDeleted { get; set; }
 

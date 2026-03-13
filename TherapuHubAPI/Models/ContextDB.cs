@@ -33,9 +33,9 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<Events> Events { get; set; }
 
-    public virtual DbSet<FileTypes> FileTypes { get; set; }
-
     public virtual DbSet<Files> Files { get; set; }
+
+    public virtual DbSet<FolderTypes> FolderTypes { get; set; }
 
     public virtual DbSet<Folders> Folders { get; set; }
 
@@ -73,6 +73,8 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<TimeOffTypes> TimeOffTypes { get; set; }
 
+    public virtual DbSet<UserDelegations> UserDelegations { get; set; }
+
     public virtual DbSet<UserTypeMenus> UserTypeMenus { get; set; }
 
     public virtual DbSet<UserTypes> UserTypes { get; set; }
@@ -93,6 +95,7 @@ public partial class ContextDB : DbContext
                 .HasPrecision(3)
                 .HasDefaultValueSql("(getdate())");
             entity.Property(e => e.DeletedAt).HasPrecision(3);
+            entity.Property(e => e.EditedAt).HasPrecision(3);
         });
 
         modelBuilder.Entity<ClientStatuses>(entity =>
@@ -209,30 +212,52 @@ public partial class ContextDB : DbContext
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<FileTypes>(entity =>
-        {
-            entity.Property(e => e.Name)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-        });
-
         modelBuilder.Entity<Files>(entity =>
         {
-            entity.Property(e => e.BlobUrl).HasMaxLength(1000);
+            entity.HasKey(e => e.Id).HasName("PK__Files__3214EC0708AB4B0B");
+
+            entity.HasIndex(e => e.FolderId, "IX_Files_Folder");
+
+            entity.HasIndex(e => new { e.FolderId, e.FileName }, "UX_Files_Folder_FileName")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
+
+            entity.Property(e => e.BlobPath).HasMaxLength(1000);
+            entity.Property(e => e.DeletedAt).HasPrecision(0);
             entity.Property(e => e.FileName).HasMaxLength(255);
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.UploadedAt)
                 .HasPrecision(0)
                 .HasDefaultValueSql("(getdate())");
         });
 
+        modelBuilder.Entity<FolderTypes>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__FolderTy__3214EC07F5557733");
+
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+        });
+
         modelBuilder.Entity<Folders>(entity =>
         {
+            entity.HasKey(e => e.Id).HasName("PK__Folders__3214EC072D95D424");
+
+            entity.HasIndex(e => e.CompanyId, "IX_Folders_Company");
+
+            entity.HasIndex(e => e.ParentFolderId, "IX_Folders_Parent");
+
+            entity.HasIndex(e => e.Path, "IX_Folders_Path");
+
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(0)
                 .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.DeletedAt).HasPrecision(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.Path).HasMaxLength(500);
         });
 
         modelBuilder.Entity<JobTitles>(entity =>
@@ -395,6 +420,16 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<UserDelegations>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__UserDele__3214EC073B321500");
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<UserTypeMenus>(entity =>

@@ -37,6 +37,8 @@ builder.Services.AddScoped<IMessageReadsRepositorio, MessageReadsRepositorio>();
 builder.Services.AddScoped<IStaffRepositorio, StaffRepositorio>();
 builder.Services.AddScoped<IStaffStatusRepositorio, StaffStatusRepositorio>();
 builder.Services.AddScoped<IStaffRolesRepositorio, StaffRolesRepositorio>();
+builder.Services.AddScoped<IFolderRepositorio, FolderRepositorio>();
+builder.Services.AddScoped<IFileRepositorio, FileRepositorio>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -48,6 +50,8 @@ builder.Services.AddScoped<IEventosService, EventosService>();
 builder.Services.AddScoped<ICompaniaService, CompaniaService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<IFolderService, FolderService>();
+builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));

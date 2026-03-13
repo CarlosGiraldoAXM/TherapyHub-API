@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using TherapuHubAPI.DTOs.Requests.Chats;
 using TherapuHubAPI.DTOs.Responses.Chats;
 using TherapuHubAPI.Models;
@@ -11,11 +12,13 @@ public class ChatService : IChatService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUsuarioRepositorio _usuarioRepositorio;
+    private readonly int _messageEditWindowMinutes;
 
-    public ChatService(IUnitOfWork unitOfWork, IUsuarioRepositorio usuarioRepositorio)
+    public ChatService(IUnitOfWork unitOfWork, IUsuarioRepositorio usuarioRepositorio, IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _usuarioRepositorio = usuarioRepositorio;
+        _messageEditWindowMinutes = configuration.GetValue<int>("ChatSettings:MessageEditWindowMinutes", 15);
     }
 
     public async Task<IEnumerable<CompanyChatResponseDto>> GetChatsByCompanyAsync(int currentUserId)
@@ -81,9 +84,12 @@ public class ChatService : IChatService
         var reads = (await _unitOfWork.MessageReads.GetByMessageIdsAsync(messageIds)).ToList();
 
         var senderIds = messages.Select(m => m.SenderUserId).Distinct().ToList();
+        var editorIds = messages.Where(m => m.EditedUserId.HasValue).Select(m => m.EditedUserId!.Value).Distinct().ToList();
         var readers = reads.Select(r => r.UserId).Distinct().ToList();
-        var userIds = senderIds.Union(readers).Distinct().ToList();
+        var userIds = senderIds.Union(editorIds).Union(readers).Distinct().ToList();
         var users = (await _usuarioRepositorio.FindAsync(u => userIds.Contains(u.Id))).ToDictionary(u => u.Id);
+
+        var editWindowCutoff = DateTime.UtcNow.AddMinutes(-_messageEditWindowMinutes);
 
         return messages.Select(m =>
         {
@@ -96,6 +102,10 @@ public class ChatService : IChatService
                 MessageText = m.MessageText,
                 CreatedAt = m.CreatedAt,
                 IsEdited = m.IsEdited,
+                EditedAt = m.EditedAt,
+                EditedUserId = m.EditedUserId,
+                EditedUserName = m.EditedUserId.HasValue && users.TryGetValue(m.EditedUserId.Value, out var eu) ? eu.FullName : null,
+                CanEdit = m.SenderUserId == currentUserId && !m.IsDeleted && m.CreatedAt >= editWindowCutoff,
                 IsDeleted = m.IsDeleted
             };
             dto.ReadBy = reads.Where(r => r.MessageId == m.Id && r.UserId != m.SenderUserId).Select(r => new MessageReadInfoDto
@@ -138,6 +148,7 @@ public class ChatService : IChatService
             MessageText = message.MessageText,
             CreatedAt = message.CreatedAt,
             IsEdited = message.IsEdited,
+            CanEdit = true,
             IsDeleted = message.IsDeleted,
             ReadBy = new List<MessageReadInfoDto>()
         };
@@ -201,5 +212,49 @@ public class ChatService : IChatService
         _unitOfWork.ChatMessages.Update(message);
         await _unitOfWork.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<(ChatMessageResponseDto? Message, string? Error)> EditMessageAsync(long messageId, EditChatMessageRequestDto request, int currentUserId)
+    {
+        var message = await _unitOfWork.ChatMessages.GetByIdAsync(messageId);
+        if (message == null)
+            return (null, "Mensaje no encontrado.");
+
+        if (message.SenderUserId != currentUserId)
+            return (null, "Solo el autor puede editar este mensaje.");
+
+        if (message.IsDeleted)
+            return (null, "No se puede editar un mensaje eliminado.");
+
+        var editDeadline = message.CreatedAt.AddMinutes(_messageEditWindowMinutes);
+        if (DateTime.UtcNow > editDeadline)
+            return (null, $"El mensaje solo puede editarse dentro de los primeros {_messageEditWindowMinutes} minutos tras su envío.");
+
+        message.MessageText = request.MessageText.Trim();
+        message.IsEdited = true;
+        message.EditedUserId = currentUserId;
+        message.EditedAt = DateTime.UtcNow;
+
+        _unitOfWork.ChatMessages.Update(message);
+        await _unitOfWork.SaveChangesAsync();
+
+        var user = await _usuarioRepositorio.GetByIdAsync(currentUserId);
+
+        return (new ChatMessageResponseDto
+        {
+            Id = message.Id,
+            ChatId = message.ChatId,
+            SenderUserId = message.SenderUserId,
+            SenderUserName = user?.FullName ?? "",
+            MessageText = message.MessageText,
+            CreatedAt = message.CreatedAt,
+            IsEdited = message.IsEdited,
+            EditedAt = message.EditedAt,
+            EditedUserId = message.EditedUserId,
+            EditedUserName = user?.FullName,
+            CanEdit = message.CreatedAt.AddMinutes(_messageEditWindowMinutes) > DateTime.UtcNow,
+            IsDeleted = message.IsDeleted,
+            ReadBy = new List<MessageReadInfoDto>()
+        }, null);
     }
 }

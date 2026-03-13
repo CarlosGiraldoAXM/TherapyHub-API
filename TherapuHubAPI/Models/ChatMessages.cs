@@ -22,4 +22,8 @@ public partial class ChatMessages
     public int? DeleteUserId { get; set; }
 
     public DateTime? DeletedAt { get; set; }
+
+    public int? EditedUserId { get; set; }
+
+    public DateTime? EditedAt { get; set; }
 }

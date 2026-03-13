@@ -7,19 +7,17 @@ public partial class Files
 {
     public long Id { get; set; }
 
-    public byte EntityTypeId { get; set; }
-
-    public int? EntityId { get; set; }
-
-    public int? FolderId { get; set; }
-
-    public byte? FileTypeId { get; set; }
-
-    public string BlobUrl { get; set; } = null!;
+    public int FolderId { get; set; }
 
     public string FileName { get; set; } = null!;
 
+    public string BlobPath { get; set; } = null!;
+
+    public int UploadedByUserId { get; set; }
+
     public DateTime UploadedAt { get; set; }
 
-    public bool IsActive { get; set; }
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
 }
