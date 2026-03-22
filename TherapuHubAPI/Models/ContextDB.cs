@@ -45,7 +45,11 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<MessageReads> MessageReads { get; set; }
 
+    public virtual DbSet<NoteModules> NoteModules { get; set; }
+
     public virtual DbSet<NotePriorities> NotePriorities { get; set; }
+
+    public virtual DbSet<NoteSections> NoteSections { get; set; }
 
     public virtual DbSet<NoteTypes> NoteTypes { get; set; }
 
@@ -222,7 +226,6 @@ public partial class ContextDB : DbContext
                 .IsUnique()
                 .HasFilter("([IsDeleted]=(0))");
 
-            entity.Property(e => e.BlobPath).HasMaxLength(1000);
             entity.Property(e => e.DeletedAt).HasPrecision(0);
             entity.Property(e => e.FileName).HasMaxLength(255);
             entity.Property(e => e.UploadedAt)
@@ -298,6 +301,19 @@ public partial class ContextDB : DbContext
                 .HasDefaultValueSql("(getdate())");
         });
 
+        modelBuilder.Entity<NoteModules>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__NoteModu__3214EC07058B139F");
+
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.Path)
+                .HasMaxLength(200)
+                .IsUnicode(false);
+        });
+
         modelBuilder.Entity<NotePriorities>(entity =>
         {
             entity.Property(e => e.Name)
@@ -305,8 +321,24 @@ public partial class ContextDB : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<NoteSections>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__NoteSect__3214EC07A52B3FCB");
+
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Module).WithMany(p => p.NoteSections)
+                .HasForeignKey(d => d.ModuleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_NoteSections_Module");
+        });
+
         modelBuilder.Entity<NoteTypes>(entity =>
         {
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.Name)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -369,7 +401,6 @@ public partial class ContextDB : DbContext
 
         modelBuilder.Entity<StaffDocuments>(entity =>
         {
-            entity.Property(e => e.BlobUrl).HasMaxLength(1000);
             entity.Property(e => e.FileName).HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.UploadedAt)

@@ -24,4 +24,8 @@ public partial class Notes
     public DateTime CreatedAt { get; set; }
 
     public bool IsActive { get; set; }
+
+    public int ModuleId { get; set; }
+
+    public int? SectionId { get; set; }
 }

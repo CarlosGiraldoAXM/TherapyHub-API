@@ -51,7 +51,9 @@ builder.Services.AddScoped<ICompaniaService, CompaniaService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IFolderService, FolderService>();
-builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<IStaffDocumentService, StaffDocumentService>();
+builder.Services.AddScoped<INotesService, NotesService>();
+builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
@@ -160,13 +162,13 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-// Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//}
-
+/*
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+*/
 // CORS debe estar antes de UseHttpsRedirection para que funcione correctamente
 app.UseCors("AllowFrontend");
 
