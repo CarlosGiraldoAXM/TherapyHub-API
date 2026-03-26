@@ -13,31 +13,38 @@ public class UsuarioRepositorio : Repository<Users>, IUsuarioRepositorio
     public async Task<Users?> GetByCorreoAsync(string correo)
     {
         return await _dbSet
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == correo.ToLower() && !u.IsDeleted);
+            .Include(u => u.Actor)
+            .FirstOrDefaultAsync(u => u.Actor.Email != null
+                && u.Actor.Email.ToLower() == correo.ToLower()
+                && !u.Actor.IsDeleted);
     }
 
     public new async Task<Users?> GetByIdAsync(int id)
     {
         return await _dbSet
-            .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+            .Include(u => u.Actor)
+            .FirstOrDefaultAsync(u => u.Id == id && !u.Actor.IsDeleted);
     }
 
     public new async Task<IEnumerable<Users>> GetAllAsync()
     {
         return await _dbSet
-            .Where(u => !u.IsDeleted)
+            .Include(u => u.Actor)
+            .Where(u => !u.Actor.IsDeleted)
             .ToListAsync();
     }
 
     public async Task<int> CountByTipoUsuarioIdAsync(int tipoUsuarioId)
     {
         return await _dbSet
-            .CountAsync(u => u.UserTypeId == tipoUsuarioId && !u.IsDeleted);
+            .Include(u => u.Actor)
+            .CountAsync(u => u.UserTypeId == tipoUsuarioId && !u.Actor.IsDeleted);
     }
 
     public async Task<bool> HasUsersInCompanyAsync(int companyId)
     {
         return await _dbSet
-            .AnyAsync(u => u.CompanyId == companyId && !u.IsDeleted);
+            .Include(u => u.Actor)
+            .AnyAsync(u => u.Actor.CompanyId == companyId && !u.Actor.IsDeleted);
     }
 }

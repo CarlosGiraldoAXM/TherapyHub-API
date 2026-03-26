@@ -13,15 +13,16 @@ public class StaffRepositorio : Repository<Staff>, IStaffRepositorio
     public async Task<IEnumerable<Staff>> GetByCompanyIdAsync(int companyId)
     {
         return await _dbSet
-            .Where(s => s.CompanyId == companyId)
-            .OrderBy(s => s.LastName)
-            .ThenBy(s => s.FirstName)
+            .Include(s => s.Actor)
+            .Where(s => s.Actor.CompanyId == companyId && !s.Actor.IsDeleted)
+            .OrderBy(s => s.Actor.FullName)
             .ToListAsync();
     }
 
     public async Task<Staff?> GetByIdAndCompanyAsync(int id, int companyId)
     {
         return await _dbSet
-            .FirstOrDefaultAsync(s => s.Id == id && s.CompanyId == companyId);
+            .Include(s => s.Actor)
+            .FirstOrDefaultAsync(s => s.Id == id && s.Actor.CompanyId == companyId && !s.Actor.IsDeleted);
     }
 }

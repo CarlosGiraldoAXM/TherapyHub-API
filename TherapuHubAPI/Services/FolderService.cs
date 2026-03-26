@@ -35,14 +35,14 @@ public class FolderService : IFolderService
 
     // ─── Folders ─────────────────────────────────────────────────────────────
 
-    public async Task<IEnumerable<FolderResponseDto>> GetFoldersByTypeAsync(int companyId, byte folderTypeId, int userId, int userTypeId)
+    public async Task<IEnumerable<FolderResponseDto>> GetFoldersByTypeAsync(int companyId, byte folderTypeId, int actorId, int userTypeId)
     {
         var isSystem = await _context.UserTypes.Where(t => t.Id == userTypeId).Select(t => t.IsSystem).FirstOrDefaultAsync();
 
         // System users see all folders; regular users only see global or their own
         var folders = isSystem
             ? await _folderRepo.GetByCompanyAndTypeAsync(companyId, folderTypeId)
-            : await _folderRepo.GetVisibleByCompanyAndTypeAsync(companyId, folderTypeId, userId);
+            : await _folderRepo.GetVisibleByCompanyAndTypeAsync(companyId, folderTypeId, actorId);
 
         var folderTypes = await _context.FolderTypes.ToListAsync();
 
@@ -56,13 +56,13 @@ public class FolderService : IFolderService
         return result;
     }
 
-    public async Task<IEnumerable<FolderResponseDto>> GetSubfoldersAsync(int parentFolderId, int companyId, int userId, int userTypeId)
+    public async Task<IEnumerable<FolderResponseDto>> GetSubfoldersAsync(int parentFolderId, int companyId, int actorId, int userTypeId)
     {
         var isSystem = await _context.UserTypes.Where(t => t.Id == userTypeId).Select(t => t.IsSystem).FirstOrDefaultAsync();
 
         var folders = isSystem
             ? await _folderRepo.GetSubfoldersAsync(parentFolderId, companyId)
-            : await _folderRepo.GetVisibleSubfoldersAsync(parentFolderId, companyId, userId);
+            : await _folderRepo.GetVisibleSubfoldersAsync(parentFolderId, companyId, actorId);
 
         var folderTypes = await _context.FolderTypes.ToListAsync();
         var result = new List<FolderResponseDto>();
@@ -86,7 +86,7 @@ public class FolderService : IFolderService
         return MapFolderToDto(folder, fileCount, folderTypes);
     }
 
-    public async Task<FolderResponseDto> CreateFolderAsync(CreateFolderRequestDto request, int companyId, int userId, int userTypeId)
+    public async Task<FolderResponseDto> CreateFolderAsync(CreateFolderRequestDto request, int companyId, int actorId, int userTypeId)
     {
         _logger.LogInformation("Creating folder '{Name}' (type {TypeId}) for company {CompanyId}", request.Name, request.FolderTypeId, companyId);
 
@@ -121,11 +121,13 @@ public class FolderService : IFolderService
         if (await _folderRepo.ExistsByNameAsync(companyId, request.FolderTypeId, request.Name.Trim(), parentFolderId: request.ParentFolderId))
             throw new InvalidOperationException($"A folder named '{request.Name}' already exists here");
 
-        // OwnerUserId is always the creator — IsGlobal only controls visibility
+        // CreatedByActorId is always the creator — IsGlobal only controls visibility
         var folder = new Folders
         {
             CompanyId = companyId,
-            OwnerUserId = userId,
+            CreatedByActorId = actorId,
+            OwnerActorId = request.OwnerActorId,
+            MenuId = request.MenuId,
             ParentFolderId = request.ParentFolderId,
             FolderTypeId = request.FolderTypeId,
             Name = request.Name.Trim(),
@@ -164,7 +166,7 @@ public class FolderService : IFolderService
 
         folder.Name = request.Name.Trim();
         folder.IsGlobal = request.IsGlobal;
-        // OwnerUserId is never cleared on update — ownership belongs to the creator
+        // CreatedByActorId is never cleared on update — ownership belongs to the creator
 
         _folderRepo.Update(folder);
         await _unitOfWork.SaveChangesAsync();
@@ -174,14 +176,14 @@ public class FolderService : IFolderService
         return MapFolderToDto(folder, fileCount, folderTypes);
     }
 
-    public async Task<bool> DeleteFolderAsync(int id, int companyId, int userId, int userTypeId)
+    public async Task<bool> DeleteFolderAsync(int id, int companyId, int actorId, int userTypeId)
     {
         var folder = await _folderRepo.GetByIdAndCompanyAsync(id, companyId);
         if (folder == null) return false;
 
         var isSystem = await _context.UserTypes.Where(t => t.Id == userTypeId).Select(t => t.IsSystem).FirstOrDefaultAsync();
 
-        if (!isSystem && folder.OwnerUserId != userId)
+        if (!isSystem && folder.CreatedByActorId != actorId)
             throw new UnauthorizedAccessException("Only the folder owner can delete it");
 
 
@@ -200,6 +202,7 @@ public class FolderService : IFolderService
         folder.IsDeleted = true;
         folder.IsActive = false;
         folder.DeletedAt = DateTime.UtcNow;
+        folder.DeletedByActorId = actorId;
         _folderRepo.Update(folder);
 
         await _unitOfWork.SaveChangesAsync();
@@ -230,7 +233,7 @@ public class FolderService : IFolderService
         return result;
     }
 
-    public async Task<FileResponseDto> UploadFileAsync(int folderId, IFormFile file, int companyId, int userId)
+    public async Task<FileResponseDto> UploadFileAsync(int folderId, IFormFile file, int companyId, int actorId)
     {
         var folder = await _folderRepo.GetByIdAndCompanyAsync(folderId, companyId);
         if (folder == null)
@@ -248,7 +251,9 @@ public class FolderService : IFolderService
             FolderId = folderId,
             FileName = file.FileName,
             BlobPath = blobPath,
-            UploadedByUserId = userId,
+            UploadedByActorId = actorId,
+            OwnerActorId = folder.OwnerActorId ?? actorId,
+            FilesTypeId = 1,
             UploadedAt = DateTime.UtcNow,
             IsDeleted = false
         };
@@ -280,7 +285,7 @@ public class FolderService : IFolderService
         }
     }
 
-    public async Task<bool> DeleteFileAsync(long fileId, int folderId, int companyId)
+    public async Task<bool> DeleteFileAsync(long fileId, int folderId, int companyId, int deleterActorId)
     {
         var folder = await _folderRepo.GetByIdAndCompanyAsync(folderId, companyId);
         if (folder == null) return false;
@@ -293,6 +298,7 @@ public class FolderService : IFolderService
 
         file.IsDeleted = true;
         file.DeletedAt = DateTime.UtcNow;
+        file.DeletedActorId = deleterActorId;
         _fileRepo.Update(file);
         await _unitOfWork.SaveChangesAsync();
 
@@ -312,7 +318,9 @@ public class FolderService : IFolderService
             FolderTypeId = f.FolderTypeId,
             FolderTypeName = typeName,
             CompanyId = f.CompanyId,
-            OwnerUserId = f.OwnerUserId,
+            CreatedByActorId = f.CreatedByActorId,
+            OwnerActorId = f.OwnerActorId,
+            MenuId = f.MenuId,
             ParentFolderId = f.ParentFolderId,
             Path = f.Path,
             Level = f.Level,
@@ -332,7 +340,7 @@ public class FolderService : IFolderService
             FileName = f.FileName,
             FileSize = size,
             ContentType = _storage.ResolveContentType(f.FileName),
-            UploadedByUserId = f.UploadedByUserId,
+            UploadedByActorId = f.UploadedByActorId,
             UploadedAt = f.UploadedAt
         };
     }

@@ -30,25 +30,26 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CreatedAt, opt => opt.Ignore());
 
         // Users: Model (EN) <-> DTO (ES)
+        // Note: Email, FullName, CompanyId are now on Actor navigation property
         CreateMap<Users, UsuarioResponseDto>()
-            .ForMember(dest => dest.Correo, opt => opt.MapFrom(src => src.Email))
-            .ForMember(dest => dest.Nombre, opt => opt.MapFrom(src => src.FullName))
+            .ForMember(dest => dest.Correo, opt => opt.MapFrom(src => src.Actor.Email))
+            .ForMember(dest => dest.Nombre, opt => opt.MapFrom(src => src.Actor.FullName))
+            .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.Actor.CompanyId))
             .ForMember(dest => dest.TipoUsuarioNombre, opt => opt.Ignore());
         CreateMap<CreateUsuarioRequestDto, Users>()
-            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Correo))
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Nombre))
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
             .ForMember(dest => dest.IsActive, opt => opt.Ignore())
             .ForMember(dest => dest.MustResetPassword, opt => opt.Ignore())
-            .ForMember(dest => dest.CompanyId, opt => opt.Ignore());
+            .ForMember(dest => dest.ActorId, opt => opt.Ignore())
+            .ForMember(dest => dest.Actor, opt => opt.Ignore());
         CreateMap<UpdateUsuarioRequestDto, Users>()
-            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Correo))
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Nombre))
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
-            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore());
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.ActorId, opt => opt.Ignore())
+            .ForMember(dest => dest.Actor, opt => opt.Ignore());
 
         // Menus: Model (EN) <-> DTO (ES). Children set manually when building tree.
         CreateMap<Menus, MenuResponseDto>()

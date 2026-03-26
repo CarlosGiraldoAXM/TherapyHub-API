@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TherapuHubAPI.DTOs.Common;
 using TherapuHubAPI.DTOs.Requests.Notes;
 using TherapuHubAPI.DTOs.Responses.Notes;
+using TherapuHubAPI.Models;
 using TherapuHubAPI.Services.IServices;
 
 namespace TherapuHubAPI.Controllers;
@@ -15,11 +17,13 @@ namespace TherapuHubAPI.Controllers;
 public class NotesController : ControllerBase
 {
     private readonly INotesService _notesService;
+    private readonly ContextDB _context;
     private readonly ILogger<NotesController> _logger;
 
-    public NotesController(INotesService notesService, ILogger<NotesController> logger)
+    public NotesController(INotesService notesService, ContextDB context, ILogger<NotesController> logger)
     {
         _notesService = notesService;
+        _context = context;
         _logger = logger;
     }
 
@@ -39,6 +43,16 @@ public class NotesController : ControllerBase
         return userId;
     }
 
+    private async Task<int?> GetActorIdAsync()
+    {
+        var userId = GetUserId();
+        if (userId == null) return null;
+        return await _context.Users
+            .Where(u => u.Id == userId.Value)
+            .Select(u => (int?)u.ActorId)
+            .FirstOrDefaultAsync();
+    }
+
     /// <summary>Get all priorities (for dropdowns).</summary>
     [HttpGet("priorities")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<NotePriorityResponseDto>>), StatusCodes.Status200OK)]
@@ -48,19 +62,35 @@ public class NotesController : ControllerBase
         return Ok(ApiResponse<IEnumerable<NotePriorityResponseDto>>.SuccessResponse(result, "Priorities retrieved", 200));
     }
 
-    /// <summary>Get notes for a specific module + entity. The entity is resolved to a NoteSection internally.</summary>
+    /// <summary>
+    /// Get notes for a menu filtered by owner actor.
+    /// If ownerActorId is omitted, defaults to the current user's own ActorId (personal notes).
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<NoteResponseDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<IEnumerable<NoteResponseDto>>>> GetByModuleEntity(
-        [FromQuery] int moduleId,
-        [FromQuery] int? entityId)
+    public async Task<ActionResult<ApiResponse<IEnumerable<NoteResponseDto>>>> GetByOwner(
+        [FromQuery] int menuId,
+        [FromQuery] int? ownerActorId)
     {
         var companyId = GetCompanyId();
         if (companyId == null)
             return Unauthorized(ApiResponse<IEnumerable<NoteResponseDto>>.ErrorResponse("CompanyId not found", null, 401));
 
-        var result = await _notesService.GetByModuleEntityAsync(companyId.Value, moduleId, entityId);
+        int resolvedOwnerActorId;
+        if (ownerActorId.HasValue && ownerActorId.Value != 0)
+        {
+            resolvedOwnerActorId = ownerActorId.Value;
+        }
+        else
+        {
+            var actorId = await GetActorIdAsync();
+            if (actorId == null)
+                return Unauthorized(ApiResponse<IEnumerable<NoteResponseDto>>.ErrorResponse("Actor not found", null, 401));
+            resolvedOwnerActorId = actorId.Value;
+        }
+
+        var result = await _notesService.GetByOwnerAsync(companyId.Value, menuId, resolvedOwnerActorId);
         return Ok(ApiResponse<IEnumerable<NoteResponseDto>>.SuccessResponse(result, "Notes retrieved successfully", 200));
     }
 
@@ -92,13 +122,13 @@ public class NotesController : ControllerBase
         if (companyId == null)
             return Unauthorized(ApiResponse<NoteResponseDto>.ErrorResponse("CompanyId not found", null, 401));
 
-        var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized(ApiResponse<NoteResponseDto>.ErrorResponse("UserId not found", null, 401));
+        var actorId = await GetActorIdAsync();
+        if (actorId == null)
+            return Unauthorized(ApiResponse<NoteResponseDto>.ErrorResponse("Actor not found", null, 401));
 
         try
         {
-            var result = await _notesService.CreateAsync(request, companyId.Value, userId.Value);
+            var result = await _notesService.CreateAsync(request, companyId.Value, actorId.Value);
             return CreatedAtAction(nameof(GetById), new { id = result.Id },
                 ApiResponse<NoteResponseDto>.SuccessResponse(result, "Note created successfully", 201));
         }

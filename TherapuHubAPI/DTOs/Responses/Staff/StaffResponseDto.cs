@@ -5,6 +5,7 @@ namespace TherapuHubAPI.DTOs.Responses.Staff;
 public class StaffResponseDto
 {
     public int Id { get; set; }
+    public int ActorId { get; set; }
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
     public string Name => $"{FirstName} {LastName}".Trim();

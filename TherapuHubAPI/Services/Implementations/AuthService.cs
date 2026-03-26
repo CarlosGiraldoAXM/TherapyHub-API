@@ -52,10 +52,10 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("The user is not active in the system");
         }
 
-        var compania = await _companiaRepositorio.GetByIdCompaniaAsync(usuario.CompanyId);
+        var compania = await _companiaRepositorio.GetByIdCompaniaAsync(usuario.Actor.CompanyId);
         if (compania != null && !compania.IsActive)
         {
-            _logger.LogWarning("Login failed: Company is inactive for user {Correo}. CompanyId: {CompanyId}", request.Correo, usuario.CompanyId);
+            _logger.LogWarning("Login failed: Company is inactive for user {Correo}. CompanyId: {CompanyId}", request.Correo, usuario.Actor.CompanyId);
             throw new UnauthorizedAccessException("The company associated with this account is not active");
         }
 
@@ -79,13 +79,14 @@ public class AuthService : IAuthService
         {
             Id = usuario.Id,
             Token = token,
-            Correo = usuario.Email,
-            Nombre = usuario.FullName,
+            Correo = usuario.Actor.Email ?? string.Empty,
+            Nombre = usuario.Actor.FullName,
             UserTypeId = usuario.UserTypeId,
             TipoUsuarioNombre = tipoUsuarioNombre,
             ExpiraEn = DateTime.Now.AddHours(24),
             RequiresPasswordReset = requiresPasswordReset,
-            EsSistema = tipoUsuario?.IsSystem == true
+            EsSistema = tipoUsuario?.IsSystem == true,
+            ActorId = usuario.ActorId
         };
     }
 
@@ -102,12 +103,12 @@ public class AuthService : IAuthService
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-            new Claim(ClaimTypes.Email, usuario.Email),
-            new Claim(ClaimTypes.Name, usuario.FullName),
+            new Claim(ClaimTypes.Email, usuario.Actor.Email ?? string.Empty),
+            new Claim(ClaimTypes.Name, usuario.Actor.FullName),
             new Claim("UserTypeId", usuario.UserTypeId.ToString()),
             new Claim("TipoUsuario", tipoUsuarioNombre),
             new Claim(ClaimTypes.Role, tipoUsuarioNombre),
-            new Claim("CompanyId", usuario.CompanyId.ToString()),
+            new Claim("CompanyId", usuario.Actor.CompanyId.ToString()),
             new Claim("IsSystem", isSystem.ToString().ToLower()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };

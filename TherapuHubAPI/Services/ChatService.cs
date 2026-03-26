@@ -26,12 +26,12 @@ public class ChatService : IChatService
         var user = await _usuarioRepositorio.GetByIdAsync(currentUserId);
         if (user == null) return Array.Empty<CompanyChatResponseDto>();
 
-        var chats = (await _unitOfWork.CompanyChats.GetByCompanyIdAsync(user.CompanyId)).ToList();
+        var chats = (await _unitOfWork.CompanyChats.GetByCompanyIdAsync(user.Actor.CompanyId)).ToList();
         if (chats.Count == 0)
         {
             var defaultChat = new CompanyChats
             {
-                CompanyId = user.CompanyId,
+                CompanyId = user.Actor.CompanyId,
                 Name = "General",
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true
@@ -57,7 +57,7 @@ public class ChatService : IChatService
         if (chat == null) return null;
 
         var user = await _usuarioRepositorio.GetByIdAsync(currentUserId);
-        if (user == null || chat.CompanyId != user.CompanyId) return null;
+        if (user == null || chat.CompanyId != user.Actor.CompanyId) return null;
 
         return new CompanyChatResponseDto
         {
@@ -75,7 +75,7 @@ public class ChatService : IChatService
         if (chat == null) return Array.Empty<ChatMessageResponseDto>();
 
         var user = await _usuarioRepositorio.GetByIdAsync(currentUserId);
-        if (user == null || chat.CompanyId != user.CompanyId) return Array.Empty<ChatMessageResponseDto>();
+        if (user == null || chat.CompanyId != user.Actor.CompanyId) return Array.Empty<ChatMessageResponseDto>();
 
         var messages = (await _unitOfWork.ChatMessages.GetByChatIdOrderedAsync(chatId)).ToList();
         if (messages.Count == 0) return Array.Empty<ChatMessageResponseDto>();
@@ -98,20 +98,20 @@ public class ChatService : IChatService
                 Id = m.Id,
                 ChatId = m.ChatId,
                 SenderUserId = m.SenderUserId,
-                SenderUserName = users.TryGetValue(m.SenderUserId, out var u) ? u.FullName : "",
+                SenderUserName = users.TryGetValue(m.SenderUserId, out var u) ? u.Actor.FullName : "",
                 MessageText = m.MessageText,
                 CreatedAt = m.CreatedAt,
                 IsEdited = m.IsEdited,
                 EditedAt = m.EditedAt,
                 EditedUserId = m.EditedUserId,
-                EditedUserName = m.EditedUserId.HasValue && users.TryGetValue(m.EditedUserId.Value, out var eu) ? eu.FullName : null,
+                EditedUserName = m.EditedUserId.HasValue && users.TryGetValue(m.EditedUserId.Value, out var eu) ? eu.Actor.FullName : null,
                 CanEdit = m.SenderUserId == currentUserId && !m.IsDeleted && m.CreatedAt >= editWindowCutoff,
                 IsDeleted = m.IsDeleted
             };
             dto.ReadBy = reads.Where(r => r.MessageId == m.Id && r.UserId != m.SenderUserId).Select(r => new MessageReadInfoDto
             {
                 UserId = r.UserId,
-                UserName = users.TryGetValue(r.UserId, out var ru) ? ru.FullName : "",
+                UserName = users.TryGetValue(r.UserId, out var ru) ? ru.Actor.FullName : "",
                 ReadAt = r.ReadAt
             }).OrderBy(x => x.ReadAt).ToList();
             return dto;
@@ -124,7 +124,7 @@ public class ChatService : IChatService
         if (chat == null) return null;
 
         var user = await _usuarioRepositorio.GetByIdAsync(currentUserId);
-        if (user == null || chat.CompanyId != user.CompanyId) return null;
+        if (user == null || chat.CompanyId != user.Actor.CompanyId) return null;
 
         var message = new ChatMessages
         {
@@ -144,7 +144,7 @@ public class ChatService : IChatService
             Id = message.Id,
             ChatId = message.ChatId,
             SenderUserId = message.SenderUserId,
-            SenderUserName = user.FullName,
+            SenderUserName = user.Actor.FullName,
             MessageText = message.MessageText,
             CreatedAt = message.CreatedAt,
             IsEdited = message.IsEdited,
@@ -173,7 +173,7 @@ public class ChatService : IChatService
             if (message == null) continue;
 
             var chat = await _unitOfWork.CompanyChats.GetByIdAsync(message.ChatId);
-            if (chat == null || chat.CompanyId != user.CompanyId) continue;
+            if (chat == null || chat.CompanyId != user.Actor.CompanyId) continue;
 
             await _unitOfWork.MessageReads.AddAsync(new MessageReads
             {
@@ -192,7 +192,7 @@ public class ChatService : IChatService
         var user = await _usuarioRepositorio.GetByIdAsync(currentUserId);
         if (user == null) return 0;
 
-        var chats = await _unitOfWork.CompanyChats.GetByCompanyIdAsync(user.CompanyId);
+        var chats = await _unitOfWork.CompanyChats.GetByCompanyIdAsync(user.Actor.CompanyId);
         var chatIds = chats.Select(c => c.Id).ToList();
         return await _unitOfWork.ChatMessages.GetUnreadCountForUserAsync(chatIds, currentUserId);
     }
@@ -245,13 +245,13 @@ public class ChatService : IChatService
             Id = message.Id,
             ChatId = message.ChatId,
             SenderUserId = message.SenderUserId,
-            SenderUserName = user?.FullName ?? "",
+            SenderUserName = user?.Actor.FullName ?? "",
             MessageText = message.MessageText,
             CreatedAt = message.CreatedAt,
             IsEdited = message.IsEdited,
             EditedAt = message.EditedAt,
             EditedUserId = message.EditedUserId,
-            EditedUserName = user?.FullName,
+            EditedUserName = user?.Actor.FullName,
             CanEdit = message.CreatedAt.AddMinutes(_messageEditWindowMinutes) > DateTime.UtcNow,
             IsDeleted = message.IsDeleted,
             ReadBy = new List<MessageReadInfoDto>()

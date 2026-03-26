@@ -7,19 +7,9 @@ public partial class Staff
 {
     public int Id { get; set; }
 
-    public string FirstName { get; set; } = null!;
-
-    public string LastName { get; set; } = null!;
-
     public short RoleId { get; set; }
 
-    public int CompanyId { get; set; }
-
     public DateOnly DateOfBirth { get; set; }
-
-    public string Phone { get; set; } = null!;
-
-    public string Email { get; set; } = null!;
 
     public byte StatusId { get; set; }
 
@@ -27,5 +17,5 @@ public partial class Staff
 
     public DateTime CreatedAt { get; set; }
 
-    public bool IsActive { get; set; }
+    public int ActorId { get; set; }
 }

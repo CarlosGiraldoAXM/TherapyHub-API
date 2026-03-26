@@ -7,7 +7,9 @@ public class FolderResponseDto
     public byte FolderTypeId { get; set; }
     public string? FolderTypeName { get; set; }
     public int CompanyId { get; set; }
-    public int? OwnerUserId { get; set; }
+    public int? CreatedByActorId { get; set; }
+    public int? OwnerActorId { get; set; }
+    public int? MenuId { get; set; }
     public int? ParentFolderId { get; set; }
     public string Path { get; set; } = null!;
     public int Level { get; set; }

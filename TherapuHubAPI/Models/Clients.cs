@@ -9,15 +9,7 @@ public partial class Clients
 
     public string ClientCode { get; set; } = null!;
 
-    public string FullName { get; set; } = null!;
-
     public DateOnly? BirthDate { get; set; }
-
-    public string? Email { get; set; }
-
-    public string? Phone { get; set; }
-
-    public int ProgramId { get; set; }
 
     public string? GuardianName { get; set; }
 
@@ -25,5 +17,9 @@ public partial class Clients
 
     public DateTime CreatedAt { get; set; }
 
-    public int CompanyId { get; set; }
+    public int? RBTId { get; set; }
+
+    public string? Emoji { get; set; }
+
+    public int ActorId { get; set; }
 }

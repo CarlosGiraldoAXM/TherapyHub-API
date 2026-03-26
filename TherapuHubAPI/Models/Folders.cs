@@ -9,13 +9,17 @@ public partial class Folders
 
     public int CompanyId { get; set; }
 
-    public int? OwnerUserId { get; set; }
+    public int? CreatedByActorId { get; set; }
+
+    public int? OwnerActorId { get; set; }
 
     public int? ParentFolderId { get; set; }
 
     public byte FolderTypeId { get; set; }
 
     public string Name { get; set; } = null!;
+
+    public int? MenuId { get; set; }
 
     public string Path { get; set; } = null!;
 
@@ -30,4 +34,6 @@ public partial class Folders
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedAt { get; set; }
+
+    public int? DeletedByActorId { get; set; }
 }

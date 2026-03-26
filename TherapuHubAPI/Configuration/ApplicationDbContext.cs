@@ -33,13 +33,11 @@ public class ApplicationDbContext : DbContext
         });
 
         // Configuración de Users
+        // Email, FullName, CompanyId are now on the Actors table (via ActorId FK)
         modelBuilder.Entity<Users>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Email).IsUnique();
-            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.PasswordHash).IsRequired();
-            entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
             entity.Property(e => e.UserTypeId).IsRequired();
             entity.Property(e => e.CreatedAt)
                 .IsRequired()

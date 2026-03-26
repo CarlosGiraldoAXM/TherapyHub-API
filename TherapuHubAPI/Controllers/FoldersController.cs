@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TherapuHubAPI.DTOs.Common;
 using TherapuHubAPI.DTOs.Requests.Folders;
 using TherapuHubAPI.DTOs.Responses.Folders;
+using TherapuHubAPI.Models;
 using TherapuHubAPI.Services.IServices;
 
 namespace TherapuHubAPI.Controllers;
@@ -15,11 +17,13 @@ namespace TherapuHubAPI.Controllers;
 public class FoldersController : ControllerBase
 {
     private readonly IFolderService _folderService;
+    private readonly ContextDB _context;
     private readonly ILogger<FoldersController> _logger;
 
-    public FoldersController(IFolderService folderService, ILogger<FoldersController> logger)
+    public FoldersController(IFolderService folderService, ContextDB context, ILogger<FoldersController> logger)
     {
         _folderService = folderService;
+        _context = context;
         _logger = logger;
     }
 
@@ -44,6 +48,16 @@ public class FoldersController : ControllerBase
         return id;
     }
 
+    private async Task<int?> GetActorIdAsync()
+    {
+        var userId = GetUserId();
+        if (userId == null) return null;
+        return await _context.Users
+            .Where(u => u.Id == userId.Value)
+            .Select(u => (int?)u.ActorId)
+            .FirstOrDefaultAsync();
+    }
+
     // ─── Folders ─────────────────────────────────────────────────────────────
 
     /// <summary>Get all folders of a specific type for the current company.</summary>
@@ -54,12 +68,12 @@ public class FoldersController : ControllerBase
     public async Task<ActionResult<ApiResponse<IEnumerable<FolderResponseDto>>>> GetAll([FromQuery] byte folderTypeId)
     {
         var companyId = GetCompanyId();
-        var userId = GetUserId();
         var userTypeId = GetUserTypeId();
-        if (companyId == null || userId == null || userTypeId == null)
+        var actorId = await GetActorIdAsync();
+        if (companyId == null || actorId == null || userTypeId == null)
             return Unauthorized(ApiResponse<IEnumerable<FolderResponseDto>>.ErrorResponse("Unauthorized", null, 401));
 
-        var result = await _folderService.GetFoldersByTypeAsync(companyId.Value, folderTypeId, userId.Value, userTypeId.Value);
+        var result = await _folderService.GetFoldersByTypeAsync(companyId.Value, folderTypeId, actorId.Value, userTypeId.Value);
         return Ok(ApiResponse<IEnumerable<FolderResponseDto>>.SuccessResponse(result, "Folders retrieved successfully", 200));
     }
 
@@ -70,12 +84,12 @@ public class FoldersController : ControllerBase
     public async Task<ActionResult<ApiResponse<IEnumerable<FolderResponseDto>>>> GetSubfolders(int parentFolderId)
     {
         var companyId = GetCompanyId();
-        var userId = GetUserId();
         var userTypeId = GetUserTypeId();
-        if (companyId == null || userId == null || userTypeId == null)
+        var actorId = await GetActorIdAsync();
+        if (companyId == null || actorId == null || userTypeId == null)
             return Unauthorized(ApiResponse<IEnumerable<FolderResponseDto>>.ErrorResponse("Unauthorized", null, 401));
 
-        var result = await _folderService.GetSubfoldersAsync(parentFolderId, companyId.Value, userId.Value, userTypeId.Value);
+        var result = await _folderService.GetSubfoldersAsync(parentFolderId, companyId.Value, actorId.Value, userTypeId.Value);
         return Ok(ApiResponse<IEnumerable<FolderResponseDto>>.SuccessResponse(result, "Subfolders retrieved successfully", 200));
     }
 
@@ -105,14 +119,14 @@ public class FoldersController : ControllerBase
     public async Task<ActionResult<ApiResponse<FolderResponseDto>>> Create([FromBody] CreateFolderRequestDto request)
     {
         var companyId = GetCompanyId();
-        var userId = GetUserId();
         var userTypeId = GetUserTypeId();
-        if (companyId == null || userId == null || userTypeId == null)
+        var actorId = await GetActorIdAsync();
+        if (companyId == null || actorId == null || userTypeId == null)
             return Unauthorized(ApiResponse<FolderResponseDto>.ErrorResponse("Unauthorized", null, 401));
 
         try
         {
-            var result = await _folderService.CreateFolderAsync(request, companyId.Value, userId.Value, userTypeId.Value);
+            var result = await _folderService.CreateFolderAsync(request, companyId.Value, actorId.Value, userTypeId.Value);
             return CreatedAtAction(nameof(GetById), new { id = result.Id },
                 ApiResponse<FolderResponseDto>.SuccessResponse(result, "Folder created successfully", 201));
         }
@@ -161,14 +175,14 @@ public class FoldersController : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
     {
         var companyId = GetCompanyId();
-        var userId = GetUserId();
         var userTypeId = GetUserTypeId();
-        if (companyId == null || userId == null || userTypeId == null)
+        var actorId = await GetActorIdAsync();
+        if (companyId == null || actorId == null || userTypeId == null)
             return Unauthorized(ApiResponse<object>.ErrorResponse("Unauthorized", null, 401));
 
         try
         {
-            var success = await _folderService.DeleteFolderAsync(id, companyId.Value, userId.Value, userTypeId.Value);
+            var success = await _folderService.DeleteFolderAsync(id, companyId.Value, actorId.Value, userTypeId.Value);
             if (!success)
                 return NotFound(ApiResponse<object>.NotFoundResponse($"Folder with Id {id} not found"));
 
@@ -205,8 +219,8 @@ public class FoldersController : ControllerBase
     public async Task<ActionResult<ApiResponse<IEnumerable<FileResponseDto>>>> UploadFiles(int folderId, [FromForm] IFormFileCollection files)
     {
         var companyId = GetCompanyId();
-        var userId = GetUserId();
-        if (companyId == null || userId == null)
+        var actorId = await GetActorIdAsync();
+        if (companyId == null || actorId == null)
             return Unauthorized(ApiResponse<IEnumerable<FileResponseDto>>.ErrorResponse("Unauthorized", null, 401));
 
         if (files == null || files.Count == 0)
@@ -217,7 +231,7 @@ public class FoldersController : ControllerBase
             var uploaded = new List<FileResponseDto>();
             foreach (var file in files)
             {
-                var result = await _folderService.UploadFileAsync(folderId, file, companyId.Value, userId.Value);
+                var result = await _folderService.UploadFileAsync(folderId, file, companyId.Value, actorId.Value);
                 uploaded.Add(result);
             }
 
@@ -260,10 +274,11 @@ public class FoldersController : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> DeleteFile(int folderId, long fileId)
     {
         var companyId = GetCompanyId();
-        if (companyId == null)
-            return Unauthorized(ApiResponse<object>.ErrorResponse("CompanyId not found", null, 401));
+        var actorId = await GetActorIdAsync();
+        if (companyId == null || actorId == null)
+            return Unauthorized(ApiResponse<object>.ErrorResponse("Unauthorized", null, 401));
 
-        var success = await _folderService.DeleteFileAsync(fileId, folderId, companyId.Value);
+        var success = await _folderService.DeleteFileAsync(fileId, folderId, companyId.Value, actorId.Value);
         if (!success)
             return NotFound(ApiResponse<object>.NotFoundResponse("File not found"));
 

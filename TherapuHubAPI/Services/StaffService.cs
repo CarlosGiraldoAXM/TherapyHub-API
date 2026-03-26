@@ -13,6 +13,7 @@ public class StaffService : IStaffService
     private readonly IStaffStatusRepositorio _statusRepositorio;
     private readonly IStaffRolesRepositorio _rolesRepositorio;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ContextDB _context;
     private readonly ILogger<StaffService> _logger;
 
     public StaffService(
@@ -20,12 +21,14 @@ public class StaffService : IStaffService
         IStaffStatusRepositorio statusRepositorio,
         IStaffRolesRepositorio rolesRepositorio,
         IUnitOfWork unitOfWork,
+        ContextDB context,
         ILogger<StaffService> logger)
     {
         _staffRepositorio = staffRepositorio;
         _statusRepositorio = statusRepositorio;
         _rolesRepositorio = rolesRepositorio;
         _unitOfWork = unitOfWork;
+        _context = context;
         _logger = logger;
     }
 
@@ -53,21 +56,28 @@ public class StaffService : IStaffService
         var contractDate = request.ContractDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var dateOfBirth = request.DateOfBirth ?? DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-30));
 
+        var actor = new Actors
+        {
+            ActorType = "STAFF",
+            FullName = $"{request.FirstName.Trim()} {request.LastName.Trim()}",
+            Email = request.Email.Trim(),
+            Phone = request.Phone.Trim(),
+            CompanyId = companyId,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+        };
+
         var staff = new Staff
         {
-            FirstName = request.FirstName.Trim(),
-            LastName = request.LastName.Trim(),
             RoleId = request.RoleId,
-            CompanyId = companyId,
             DateOfBirth = dateOfBirth,
-            Phone = request.Phone.Trim(),
-            Email = request.Email.Trim(),
             StatusId = request.StatusId,
             ContractDate = contractDate,
             CreatedAt = DateTime.UtcNow,
-            IsActive = true
+            Actor = actor,
         };
 
+        _context.Actors.Add(actor);
         await _staffRepositorio.AddAsync(staff);
         await _unitOfWork.SaveChangesAsync();
 
@@ -92,7 +102,6 @@ public class StaffService : IStaffService
 
     private async Task CreateBirthdayEventAsync(Staff staff, DateOnly dateOfBirth, int companyId)
     {
-        // Find or create the "Birthday" event type
         var birthdayType = await _unitOfWork.EventTypes.FirstOrDefaultAsync(
             t => t.Name.ToLower() == "birthday");
 
@@ -110,13 +119,12 @@ public class StaffService : IStaffService
             _logger.LogInformation("Created 'Birthday' event type with Id: {Id}", birthdayType.Id);
         }
 
-        // Calculate the next upcoming birthday date
         var birthdayDate = GetNextBirthdayDate(dateOfBirth);
 
         var birthdayEvent = new Events
         {
-            Title = $"{staff.FirstName} {staff.LastName}'s Birthday",
-            Description = $"Birthday of {staff.FirstName} {staff.LastName}",
+            Title = $"{staff.Actor.FullName}'s Birthday",
+            Description = $"Birthday of {staff.Actor.FullName}",
             StartDate = birthdayDate,
             EndDate = birthdayDate.AddDays(1).AddSeconds(-1),
             IsAllDay = true,
@@ -131,18 +139,6 @@ public class StaffService : IStaffService
         await _unitOfWork.Events.AddAsync(birthdayEvent);
         await _unitOfWork.SaveChangesAsync();
 
-        var recurrence = new EventRecurrence
-        {
-            EventId = birthdayEvent.Id,
-            RecurrenceType = "yearly",
-            Interval = 1,
-            DayOfWeek = null,
-            EndDate = null
-        };
-
-        await _unitOfWork.EventRecurrences.AddAsync(recurrence);
-        await _unitOfWork.SaveChangesAsync();
-
         _logger.LogInformation(
             "Birthday event created for staff Id: {StaffId}, EventId: {EventId}, next birthday: {Date}",
             staff.Id, birthdayEvent.Id, birthdayDate.ToString("yyyy-MM-dd"));
@@ -155,7 +151,6 @@ public class StaffService : IStaffService
 
         if (existingEvent == null)
         {
-            // No birthday event exists yet — create one if a date of birth was provided
             if (newDateOfBirth.HasValue)
             {
                 await CreateBirthdayEventAsync(staff, newDateOfBirth.Value, companyId);
@@ -163,11 +158,9 @@ public class StaffService : IStaffService
             return;
         }
 
-        // Update the title in case the name changed
-        existingEvent.Title = $"{staff.FirstName} {staff.LastName}'s Birthday";
-        existingEvent.Description = $"Birthday of {staff.FirstName} {staff.LastName}";
+        existingEvent.Title = $"{staff.Actor.FullName}'s Birthday";
+        existingEvent.Description = $"Birthday of {staff.Actor.FullName}";
 
-        // Update the date if a new date of birth was provided
         if (newDateOfBirth.HasValue)
         {
             var birthdayDate = GetNextBirthdayDate(newDateOfBirth.Value);
@@ -186,7 +179,6 @@ public class StaffService : IStaffService
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var year = today.Year;
 
-        // Handle Feb 29 on non-leap years by using Feb 28
         var day = dateOfBirth.Day;
         if (dateOfBirth.Month == 2 && day == 29 && !DateTime.IsLeapYear(year))
             day = 28;
@@ -215,12 +207,11 @@ public class StaffService : IStaffService
             return null;
         }
 
-        staff.FirstName = request.FirstName.Trim();
-        staff.LastName = request.LastName.Trim();
+        staff.Actor.FullName = $"{request.FirstName.Trim()} {request.LastName.Trim()}";
+        staff.Actor.Email = request.Email.Trim();
+        staff.Actor.Phone = request.Phone.Trim();
         staff.RoleId = request.RoleId;
         staff.DateOfBirth = request.DateOfBirth ?? staff.DateOfBirth;
-        staff.Phone = request.Phone.Trim();
-        staff.Email = request.Email.Trim();
         staff.StatusId = request.StatusId;
         staff.ContractDate = request.ContractDate ?? staff.ContractDate;
 
@@ -246,6 +237,7 @@ public class StaffService : IStaffService
         var staff = await _staffRepositorio.GetByIdAndCompanyAsync(id, companyId);
         if (staff == null) return false;
         _staffRepositorio.Remove(staff);
+        _context.Actors.Remove(staff.Actor);
         await _unitOfWork.SaveChangesAsync();
         _logger.LogInformation("Staff deleted Id: {Id}", id);
         return true;
@@ -255,10 +247,10 @@ public class StaffService : IStaffService
     {
         var staff = await _staffRepositorio.GetByIdAndCompanyAsync(id, companyId);
         if (staff == null) return false;
-        staff.IsActive = !staff.IsActive;
+        staff.Actor.IsActive = !staff.Actor.IsActive;
         _staffRepositorio.Update(staff);
         await _unitOfWork.SaveChangesAsync();
-        _logger.LogInformation("Staff IsActive toggled Id: {Id}, IsActive: {IsActive}", id, staff.IsActive);
+        _logger.LogInformation("Staff IsActive toggled Id: {Id}, IsActive: {IsActive}", id, staff.Actor.IsActive);
         return true;
     }
 
@@ -278,22 +270,28 @@ public class StaffService : IStaffService
     {
         var status = statuses.FirstOrDefault(x => x.Id == s.StatusId);
         var role = roles.FirstOrDefault(x => x.Id == s.RoleId);
+
+        var nameParts = s.Actor.FullName.Split(' ', 2);
+        var firstName = nameParts[0];
+        var lastName = nameParts.Length > 1 ? nameParts[1] : string.Empty;
+
         return new StaffResponseDto
         {
             Id = s.Id,
-            FirstName = s.FirstName,
-            LastName = s.LastName,
+            ActorId = s.ActorId,
+            FirstName = firstName,
+            LastName = lastName,
             RoleId = s.RoleId,
             RoleName = role?.Name,
-            CompanyId = s.CompanyId,
+            CompanyId = s.Actor.CompanyId,
             DateOfBirth = s.DateOfBirth,
-            Phone = s.Phone,
-            Email = s.Email,
+            Phone = s.Actor.Phone ?? string.Empty,
+            Email = s.Actor.Email ?? string.Empty,
             StatusId = s.StatusId,
             StatusName = status?.Name,
             ContractDate = s.ContractDate,
             CreatedAt = s.CreatedAt,
-            IsActive = s.IsActive
+            IsActive = s.Actor.IsActive,
         };
     }
 }

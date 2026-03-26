@@ -9,7 +9,9 @@ public partial class Notes
 
     public int CompanyId { get; set; }
 
-    public int CreatedByUserId { get; set; }
+    public int CreatedByActorId { get; set; }
+
+    public int? OwnerActorId { get; set; }
 
     public string Title { get; set; } = null!;
 
@@ -25,7 +27,7 @@ public partial class Notes
 
     public bool IsActive { get; set; }
 
-    public int ModuleId { get; set; }
+    public int MenuId { get; set; }
 
     public int? SectionId { get; set; }
 }

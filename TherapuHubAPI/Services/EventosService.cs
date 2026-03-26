@@ -26,7 +26,7 @@ public class EventosService : IEventosService
         var user = await _usuarioRepositorio.GetByIdAsync(userId);
         if (user == null) return Array.Empty<EventoResponseDto>();
 
-        var eventos = await _unitOfWork.Events.GetEventosByUserAsync(userId, user.CompanyId, start, end, esTodoElDia);
+        var eventos = await _unitOfWork.Events.GetEventosByUserAsync(userId, user.Actor.CompanyId, start, end, esTodoElDia);
         
         // Obtener todos los tipos de evento de una vez para evitar múltiples consultas
         var tiposEventoIds = eventos.Select(e => e.EventTypeId).Distinct().ToList();
@@ -57,7 +57,7 @@ public class EventosService : IEventosService
 
         if (evento.IsGlobal)
         {
-            if (evento.CompanyId != user.CompanyId) return null;
+            if (evento.CompanyId != user.Actor.CompanyId) return null;
         }
         else
         {
@@ -82,7 +82,7 @@ public class EventosService : IEventosService
         {
             var evento = _mapper.Map<Events>(request);
             evento.CreatedAt = DateTime.Now;
-            evento.CompanyId = user.CompanyId;
+            evento.CompanyId = user.Actor.CompanyId;
 
             await _unitOfWork.Events.AddAsync(evento);
             await _unitOfWork.SaveChangesAsync();
@@ -121,7 +121,7 @@ public class EventosService : IEventosService
         if (evento == null) return false;
 
         var user = await _usuarioRepositorio.GetByIdAsync(currentUserId);
-        if (user == null || evento.CompanyId != user.CompanyId) return false;
+        if (user == null || evento.CompanyId != user.Actor.CompanyId) return false;
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -164,7 +164,7 @@ public class EventosService : IEventosService
         if (evento == null) return false;
 
         var user = await _usuarioRepositorio.GetByIdAsync(currentUserId);
-        if (user == null || evento.CompanyId != user.CompanyId) return false;
+        if (user == null || evento.CompanyId != user.Actor.CompanyId) return false;
 
         _unitOfWork.Events.Remove(evento);
         return await _unitOfWork.SaveChangesAsync() > 0;

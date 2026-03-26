@@ -1,8 +1,6 @@
-using TherapuHubAPI.Models;
-
 namespace TherapuHubAPI.Repositorio.IRepositorio;
 
-public interface IEventRecurrenceRepositorio : IRepository<EventRecurrence>
+// EventRecurrence model removed from schema - stub kept for reference only
+public interface IEventRecurrenceRepositorio
 {
-    Task<IEnumerable<EventRecurrence>> GetByEventIdAsync(int eventId);
 }

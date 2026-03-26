@@ -1,7 +1,9 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using TherapuHubAPI.DTOs.Requests.Auth;
 using TherapuHubAPI.DTOs.Requests.Users;
 using TherapuHubAPI.DTOs.Responses.Users;
+using TherapuHubAPI.Models;
 using TherapuHubAPI.Repositorio;
 using TherapuHubAPI.Repositorio.IRepositorio;
 using TherapuHubAPI.Services.IServices;
@@ -14,6 +16,7 @@ public class UsuarioService : IUsuarioService
     private readonly ITipoUsuarioRepositorio _tipoUsuarioRepositorio;
     private readonly ICompaniaRepositorio _companiaRepositorio;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ContextDB _context;
     private readonly IMapper _mapper;
     private readonly ILogger<UsuarioService> _logger;
 
@@ -22,6 +25,7 @@ public class UsuarioService : IUsuarioService
         ITipoUsuarioRepositorio tipoUsuarioRepositorio,
         ICompaniaRepositorio companiaRepositorio,
         IUnitOfWork unitOfWork,
+        ContextDB context,
         IMapper mapper,
         ILogger<UsuarioService> logger)
     {
@@ -29,6 +33,7 @@ public class UsuarioService : IUsuarioService
         _tipoUsuarioRepositorio = tipoUsuarioRepositorio;
         _companiaRepositorio = companiaRepositorio;
         _unitOfWork = unitOfWork;
+        _context = context;
         _mapper = mapper;
         _logger = logger;
     }
@@ -58,7 +63,7 @@ public class UsuarioService : IUsuarioService
         }
         else
         {
-            targetCompaniaId = currentUser.CompanyId;
+            targetCompaniaId = currentUser.Actor.CompanyId;
         }
 
         _logger.LogInformation("Creating new user with email: {Correo}, company: {CompanyId}", request.Correo, targetCompaniaId);
@@ -67,7 +72,9 @@ public class UsuarioService : IUsuarioService
         var targetCompania = await _companiaRepositorio.GetByIdCompaniaAsync(targetCompaniaId);
         if (targetCompania?.UserLimit.HasValue == true)
         {
-            var currentUserCount = await _usuarioRepositorio.CountAsync(u => u.CompanyId == targetCompaniaId && !u.IsDeleted);
+            var currentUserCount = await _context.Users
+                .Include(u => u.Actor)
+                .CountAsync(u => u.Actor.CompanyId == targetCompaniaId && !u.Actor.IsDeleted);
             if (currentUserCount >= targetCompania.UserLimit.Value)
             {
                 _logger.LogWarning("User limit reached for company {CompanyId}. Limit: {Limit}, Current: {Count}",
@@ -99,21 +106,34 @@ public class UsuarioService : IUsuarioService
 
         const string defaultPassword = "123456";
 
-        var usuario = _mapper.Map<Models.Users>(request);
-        usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(defaultPassword);
-        usuario.CreatedAt = DateTime.Now;
-        usuario.IsActive = true;
-        usuario.MustResetPassword = true;
-        usuario.CompanyId = targetCompaniaId;
+        var actor = new Actors
+        {
+            ActorType = "USER",
+            FullName = request.Nombre,
+            Email = request.Correo,
+            CompanyId = targetCompaniaId,
+            IsActive = true,
+            CreatedAt = DateTime.Now,
+        };
 
+        var usuario = new Users
+        {
+            UserTypeId = request.UserTypeId,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(defaultPassword),
+            CreatedAt = DateTime.Now,
+            IsActive = true,
+            MustResetPassword = true,
+            Actor = actor,
+        };
+
+        _context.Actors.Add(actor);
         await _usuarioRepositorio.AddAsync(usuario);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Usuario creado exitosamente con Id: {Id}", usuario.Id);
 
-        // Obtener el tipo de usuario para el response
         var tipoUsuarioParaResponse = await _tipoUsuarioRepositorio.GetByIdAsync(usuario.UserTypeId);
-        var response = _mapper.Map<UsuarioResponseDto>(usuario);
+        var response = MapToResponseDto(usuario);
         response.TipoUsuarioNombre = tipoUsuarioParaResponse?.Name ?? string.Empty;
 
         return response;
@@ -123,16 +143,15 @@ public class UsuarioService : IUsuarioService
     {
         _logger.LogInformation("Obteniendo usuario con Id: {Id}", id);
         var usuario = await _usuarioRepositorio.GetByIdAsync(id);
-        
+
         if (usuario == null)
         {
             _logger.LogWarning("Usuario no encontrado con Id: {Id}", id);
             return null;
         }
 
-        // Obtener el tipo de usuario
         var tipoUsuario = await _tipoUsuarioRepositorio.GetByIdAsync(usuario.UserTypeId);
-        var response = _mapper.Map<UsuarioResponseDto>(usuario);
+        var response = MapToResponseDto(usuario);
         response.TipoUsuarioNombre = tipoUsuario?.Name ?? string.Empty;
         return response;
     }
@@ -169,22 +188,19 @@ public class UsuarioService : IUsuarioService
             }
         }
 
-        // Exclude users whose user type is system (EsSistema == true)
-        IEnumerable<Models.Users> usuariosFiltered;
+        IEnumerable<Users> usuariosFiltered;
         if (currentUserEsSistema)
         {
-            // System user: see all users (except those with system type)
             usuariosFiltered = usuarios.Where(u => !tiposSistemaIds.Contains(u.UserTypeId)).ToList();
         }
         else
         {
-            // Non-system user: only see users from the same company (and exclude system-type users)
             usuariosFiltered = usuarios.Where(u =>
-                u.CompanyId == currentUser.CompanyId &&
+                u.Actor?.CompanyId == currentUser.Actor?.CompanyId &&
                 !tiposSistemaIds.Contains(u.UserTypeId)).ToList();
         }
 
-        var response = _mapper.Map<IEnumerable<UsuarioResponseDto>>(usuariosFiltered).ToList();
+        var response = usuariosFiltered.Select(MapToResponseDto).ToList();
 
         foreach (var item in response)
         {
@@ -209,8 +225,7 @@ public class UsuarioService : IUsuarioService
             return null;
         }
 
-        // Validar que el correo no esté en uso por otro usuario
-        if (usuario.Email != request.Correo)
+        if (usuario.Actor.Email != request.Correo)
         {
             var usuarioExistente = await _usuarioRepositorio.GetByCorreoAsync(request.Correo);
             if (usuarioExistente != null && usuarioExistente.Id != id)
@@ -220,7 +235,6 @@ public class UsuarioService : IUsuarioService
             }
         }
 
-        // Validar que el tipo de usuario exista
         var tipoUsuario = await _tipoUsuarioRepositorio.GetByIdAsync(request.UserTypeId);
         if (tipoUsuario == null)
         {
@@ -228,13 +242,12 @@ public class UsuarioService : IUsuarioService
             throw new InvalidOperationException($"User type with Id {request.UserTypeId} does not exist");
         }
 
-        // Actualizar campos
-        usuario.Email = request.Correo;
-        usuario.FullName = request.Nombre;
+        usuario.Actor.Email = request.Correo;
+        usuario.Actor.FullName = request.Nombre;
+        usuario.Actor.IsActive = request.IsActive;
         usuario.UserTypeId = request.UserTypeId;
         usuario.IsActive = request.IsActive;
 
-        // Actualizar contraseña solo si se proporciona
         if (!string.IsNullOrWhiteSpace(request.Contrasena))
         {
             if (request.Contrasena != request.ConfirmarContrasena)
@@ -249,9 +262,8 @@ public class UsuarioService : IUsuarioService
 
         _logger.LogInformation("Usuario actualizado exitosamente con Id: {Id}", id);
 
-        // Obtener el tipo de usuario para el response
         var tipoUsuarioParaResponse = await _tipoUsuarioRepositorio.GetByIdAsync(usuario.UserTypeId);
-        var response = _mapper.Map<UsuarioResponseDto>(usuario);
+        var response = MapToResponseDto(usuario);
         response.TipoUsuarioNombre = tipoUsuarioParaResponse?.Name ?? string.Empty;
 
         return response;
@@ -268,9 +280,11 @@ public class UsuarioService : IUsuarioService
             return false;
         }
 
-        usuario.IsDeleted = true;
-        usuario.DeletedAt = DateTime.Now;
-        usuario.DeleteUserId = deleteUserId;
+        var deletingUser = await _usuarioRepositorio.GetByIdAsync(deleteUserId);
+
+        usuario.Actor.IsDeleted = true;
+        usuario.Actor.DeletedAt = DateTime.Now;
+        usuario.Actor.DeletedByActorId = deletingUser?.ActorId;
 
         _usuarioRepositorio.Update(usuario);
         await _unitOfWork.SaveChangesAsync();
@@ -291,6 +305,7 @@ public class UsuarioService : IUsuarioService
         }
 
         usuario.IsActive = !usuario.IsActive;
+        usuario.Actor.IsActive = usuario.IsActive;
         _usuarioRepositorio.Update(usuario);
         await _unitOfWork.SaveChangesAsync();
 
@@ -352,4 +367,15 @@ public class UsuarioService : IUsuarioService
 
         _logger.LogInformation("Password reset successfully for user Id: {UserId}. User must set new password on next login.", userId);
     }
+
+    private static UsuarioResponseDto MapToResponseDto(Users u) => new()
+    {
+        Id = u.Id,
+        Correo = u.Actor?.Email ?? string.Empty,
+        Nombre = u.Actor?.FullName ?? string.Empty,
+        UserTypeId = u.UserTypeId,
+        CreatedAt = u.CreatedAt,
+        IsActive = u.IsActive,
+        CompanyId = u.Actor?.CompanyId ?? 0,
+    };
 }

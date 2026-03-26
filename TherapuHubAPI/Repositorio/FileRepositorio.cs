@@ -33,4 +33,17 @@ public class FileRepositorio : Repository<Files>, IFileRepositorio
     {
         return await _dbSet.CountAsync(f => f.FolderId == folderId && !f.IsDeleted);
     }
+
+    public async Task<IEnumerable<Files>> GetByOwnerAndTypeAsync(int ownerActorId, int filesTypeId)
+    {
+        return await _dbSet
+            .Where(f => f.OwnerActorId == ownerActorId && f.FilesTypeId == filesTypeId && !f.IsDeleted)
+            .OrderByDescending(f => f.UploadedAt)
+            .ToListAsync();
+    }
+
+    public async Task<Files?> GetByIdAsync(long id)
+    {
+        return await _dbSet.FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted);
+    }
 }

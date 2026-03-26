@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 namespace TherapuHubAPI.Models;
 
-public partial class Programs
+public partial class FilesTypes
 {
     public int Id { get; set; }
 
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; }
 
-    public bool IsActive { get; set; }
+    public bool? IsActive { get; set; }
 }

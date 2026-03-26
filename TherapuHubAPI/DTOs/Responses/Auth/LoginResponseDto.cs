@@ -24,4 +24,7 @@ public class LoginResponseDto
     /// <summary>True when user type is system (EsSistema); can create users for any company.</summary>
     [JsonPropertyName("esSistema")]
     public bool EsSistema { get; set; }
+
+    [JsonPropertyName("actorId")]
+    public int ActorId { get; set; }
 }

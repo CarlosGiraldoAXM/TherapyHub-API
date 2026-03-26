@@ -18,7 +18,7 @@ public class FolderRepositorio : Repository<Folders>, IFolderRepositorio
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Folders>> GetVisibleByCompanyAndTypeAsync(int companyId, byte folderTypeId, int userId)
+    public async Task<IEnumerable<Folders>> GetVisibleByCompanyAndTypeAsync(int companyId, byte folderTypeId, int actorId)
     {
         return await _dbSet
             .Where(f =>
@@ -27,7 +27,7 @@ public class FolderRepositorio : Repository<Folders>, IFolderRepositorio
                 f.ParentFolderId == null &&
                 !f.IsDeleted &&
                 f.IsActive &&
-                (f.IsGlobal || f.OwnerUserId == userId))
+                (f.IsGlobal || f.CreatedByActorId == actorId))
             .OrderBy(f => f.Name)
             .ToListAsync();
     }
@@ -40,7 +40,7 @@ public class FolderRepositorio : Repository<Folders>, IFolderRepositorio
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Folders>> GetVisibleSubfoldersAsync(int parentFolderId, int companyId, int userId)
+    public async Task<IEnumerable<Folders>> GetVisibleSubfoldersAsync(int parentFolderId, int companyId, int actorId)
     {
         return await _dbSet
             .Where(f =>
@@ -48,7 +48,7 @@ public class FolderRepositorio : Repository<Folders>, IFolderRepositorio
                 f.CompanyId == companyId &&
                 !f.IsDeleted &&
                 f.IsActive &&
-                (f.IsGlobal || f.OwnerUserId == userId))
+                (f.IsGlobal || f.CreatedByActorId == actorId))
             .OrderBy(f => f.Name)
             .ToListAsync();
     }

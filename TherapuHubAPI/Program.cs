@@ -39,6 +39,8 @@ builder.Services.AddScoped<IStaffStatusRepositorio, StaffStatusRepositorio>();
 builder.Services.AddScoped<IStaffRolesRepositorio, StaffRolesRepositorio>();
 builder.Services.AddScoped<IFolderRepositorio, FolderRepositorio>();
 builder.Services.AddScoped<IFileRepositorio, FileRepositorio>();
+builder.Services.AddScoped<IClientRepositorio, ClientRepositorio>();
+builder.Services.AddScoped<IClientStatusRepositorio, ClientStatusRepositorio>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -51,8 +53,10 @@ builder.Services.AddScoped<ICompaniaService, CompaniaService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IFolderService, FolderService>();
+builder.Services.AddScoped<IEntityFilesService, EntityFilesService>();
 builder.Services.AddScoped<IStaffDocumentService, StaffDocumentService>();
 builder.Services.AddScoped<INotesService, NotesService>();
+builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
 
 // AutoMapper
