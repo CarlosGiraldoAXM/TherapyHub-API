@@ -1,3 +1,6 @@
+# Secrets — never commit real values
+appsettings.json
+
 # Visual Studio
 .vs/
 
