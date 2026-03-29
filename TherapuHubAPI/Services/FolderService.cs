@@ -35,14 +35,14 @@ public class FolderService : IFolderService
 
     // ─── Folders ─────────────────────────────────────────────────────────────
 
-    public async Task<IEnumerable<FolderResponseDto>> GetFoldersByTypeAsync(int companyId, byte folderTypeId, int actorId, int userTypeId)
+    public async Task<IEnumerable<FolderResponseDto>> GetFoldersByTypeAsync(int companyId, byte folderTypeId, int actorId, int userTypeId, int? sectionId = null)
     {
         var isSystem = await _context.UserTypes.Where(t => t.Id == userTypeId).Select(t => t.IsSystem).FirstOrDefaultAsync();
 
         // System users see all folders; regular users only see global or their own
         var folders = isSystem
-            ? await _folderRepo.GetByCompanyAndTypeAsync(companyId, folderTypeId)
-            : await _folderRepo.GetVisibleByCompanyAndTypeAsync(companyId, folderTypeId, actorId);
+            ? await _folderRepo.GetByCompanyAndTypeAsync(companyId, folderTypeId, sectionId)
+            : await _folderRepo.GetVisibleByCompanyAndTypeAsync(companyId, folderTypeId, actorId, sectionId);
 
         var folderTypes = await _context.FolderTypes.ToListAsync();
 
@@ -128,6 +128,7 @@ public class FolderService : IFolderService
             CreatedByActorId = actorId,
             OwnerActorId = request.OwnerActorId,
             MenuId = request.MenuId,
+            SectionId = request.SectionId,
             ParentFolderId = request.ParentFolderId,
             FolderTypeId = request.FolderTypeId,
             Name = request.Name.Trim(),
@@ -321,6 +322,7 @@ public class FolderService : IFolderService
             CreatedByActorId = f.CreatedByActorId,
             OwnerActorId = f.OwnerActorId,
             MenuId = f.MenuId,
+            SectionId = f.SectionId,
             ParentFolderId = f.ParentFolderId,
             Path = f.Path,
             Level = f.Level,

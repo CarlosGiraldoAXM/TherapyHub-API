@@ -17,10 +17,11 @@ public class NotesService : INotesService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<NoteResponseDto>> GetByOwnerAsync(int companyId, int menuId, int ownerActorId)
+    public async Task<IEnumerable<NoteResponseDto>> GetByOwnerAsync(int companyId, int menuId, int ownerActorId, int? sectionId = null)
     {
         var notes = await _context.Notes
-            .Where(n => n.CompanyId == companyId && n.MenuId == menuId && n.OwnerActorId == ownerActorId)
+            .Where(n => n.CompanyId == companyId && n.MenuId == menuId && n.OwnerActorId == ownerActorId
+                        && (sectionId == null ? n.SectionId == null : n.SectionId == sectionId))
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();
 
@@ -58,7 +59,7 @@ public class NotesService : INotesService
             PriorityId = dto.PriorityId,
             NoteTypeId = dto.NoteTypeId,
             MenuId = dto.MenuId,
-            SectionId = null,
+            SectionId = dto.SectionId,
             DueDate = dto.DueDate,
             CreatedAt = DateTime.UtcNow,
             IsActive = true,
@@ -146,6 +147,7 @@ public class NotesService : INotesService
             DueDate = note.DueDate,
             CreatedAt = note.CreatedAt,
             IsActive = note.IsActive,
+            SectionId = note.SectionId,
         };
     }
 }

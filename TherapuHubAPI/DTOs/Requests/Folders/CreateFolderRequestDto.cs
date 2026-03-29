@@ -8,4 +8,5 @@ public class CreateFolderRequestDto
     public bool IsGlobal { get; set; } = true;
     public int? OwnerActorId { get; set; }
     public int? MenuId { get; set; }
+    public int? SectionId { get; set; }
 }

@@ -15,4 +15,5 @@ public class NoteResponseDto
     public DateTime? DueDate { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsActive { get; set; }
+    public int? SectionId { get; set; }
 }

@@ -1,5 +1,6 @@
 # Secrets — never commit real values
 appsettings.json
+/TherapuHubAPI/appsettings.json
 
 # Visual Studio
 .vs/
@@ -15,4 +16,4 @@ obj/
 # Rider / VSCode
 .idea/
 .vscode/
-/TherapuHubAPI/appsettings.json
+

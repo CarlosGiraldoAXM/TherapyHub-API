@@ -36,4 +36,6 @@ public partial class Folders
     public DateTime? DeletedAt { get; set; }
 
     public int? DeletedByActorId { get; set; }
+
+    public int? SectionId { get; set; }
 }

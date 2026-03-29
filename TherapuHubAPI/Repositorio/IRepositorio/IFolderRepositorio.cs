@@ -5,10 +5,10 @@ namespace TherapuHubAPI.Repositorio.IRepositorio;
 public interface IFolderRepositorio : IRepository<Folders>
 {
     /// <summary>Returns all active folders (system users see everything).</summary>
-    Task<IEnumerable<Folders>> GetByCompanyAndTypeAsync(int companyId, byte folderTypeId);
+    Task<IEnumerable<Folders>> GetByCompanyAndTypeAsync(int companyId, byte folderTypeId, int? sectionId = null);
 
     /// <summary>Returns only global folders + folders created by the given actor.</summary>
-    Task<IEnumerable<Folders>> GetVisibleByCompanyAndTypeAsync(int companyId, byte folderTypeId, int actorId);
+    Task<IEnumerable<Folders>> GetVisibleByCompanyAndTypeAsync(int companyId, byte folderTypeId, int actorId, int? sectionId = null);
 
     /// <summary>Returns all direct subfolders of a parent (system users).</summary>
     Task<IEnumerable<Folders>> GetSubfoldersAsync(int parentFolderId, int companyId);

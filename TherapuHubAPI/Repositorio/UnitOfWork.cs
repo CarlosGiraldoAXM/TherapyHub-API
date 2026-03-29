@@ -12,6 +12,10 @@ public interface IUnitOfWork : IDisposable
     ICompanyChatsRepositorio CompanyChats { get; }
     IChatMessagesRepositorio ChatMessages { get; }
     IMessageReadsRepositorio MessageReads { get; }
+    IGoalTrackerStatusRepositorio GoalTrackerStatuses { get; }
+    IGoalTrackerCategoriesRepositorio GoalTrackerCategories { get; }
+    IGoalTrackersRepositorio GoalTrackers { get; }
+    IGoalTrackerItemsRepositorio GoalTrackerItems { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
@@ -29,6 +33,10 @@ public class UnitOfWork : IUnitOfWork
     public ICompanyChatsRepositorio CompanyChats { get; private set; }
     public IChatMessagesRepositorio ChatMessages { get; private set; }
     public IMessageReadsRepositorio MessageReads { get; private set; }
+    public IGoalTrackerStatusRepositorio GoalTrackerStatuses { get; private set; }
+    public IGoalTrackerCategoriesRepositorio GoalTrackerCategories { get; private set; }
+    public IGoalTrackersRepositorio GoalTrackers { get; private set; }
+    public IGoalTrackerItemsRepositorio GoalTrackerItems { get; private set; }
 
     public UnitOfWork(ContextDB context)
     {
@@ -39,6 +47,10 @@ public class UnitOfWork : IUnitOfWork
         CompanyChats = new CompanyChatsRepositorio(_context);
         ChatMessages = new ChatMessagesRepositorio(_context);
         MessageReads = new MessageReadsRepositorio(_context);
+        GoalTrackerStatuses = new GoalTrackerStatusRepositorio(_context);
+        GoalTrackerCategories = new GoalTrackerCategoriesRepositorio(_context);
+        GoalTrackers = new GoalTrackersRepositorio(_context);
+        GoalTrackerItems = new GoalTrackerItemsRepositorio(_context);
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

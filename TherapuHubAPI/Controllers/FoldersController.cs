@@ -65,7 +65,7 @@ public class FoldersController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<FolderResponseDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<IEnumerable<FolderResponseDto>>>> GetAll([FromQuery] byte folderTypeId)
+    public async Task<ActionResult<ApiResponse<IEnumerable<FolderResponseDto>>>> GetAll([FromQuery] byte folderTypeId, [FromQuery] int? sectionId)
     {
         var companyId = GetCompanyId();
         var userTypeId = GetUserTypeId();
@@ -73,7 +73,7 @@ public class FoldersController : ControllerBase
         if (companyId == null || actorId == null || userTypeId == null)
             return Unauthorized(ApiResponse<IEnumerable<FolderResponseDto>>.ErrorResponse("Unauthorized", null, 401));
 
-        var result = await _folderService.GetFoldersByTypeAsync(companyId.Value, folderTypeId, actorId.Value, userTypeId.Value);
+        var result = await _folderService.GetFoldersByTypeAsync(companyId.Value, folderTypeId, actorId.Value, userTypeId.Value, sectionId);
         return Ok(ApiResponse<IEnumerable<FolderResponseDto>>.SuccessResponse(result, "Folders retrieved successfully", 200));
     }
 

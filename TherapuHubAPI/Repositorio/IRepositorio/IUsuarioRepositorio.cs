@@ -8,6 +8,7 @@ public interface IUsuarioRepositorio : IRepository<Users>
     Task<Users?> GetByCorreoAsync(string correo);
     new Task<Users?> GetByIdAsync(int id);
     new Task<IEnumerable<Users>> GetAllAsync();
+    Task<IEnumerable<Users>> FindByIdsWithActorAsync(IEnumerable<int> ids);
     Task<int> CountByTipoUsuarioIdAsync(int tipoUsuarioId);
     Task<bool> HasUsersInCompanyAsync(int companyId);
 }

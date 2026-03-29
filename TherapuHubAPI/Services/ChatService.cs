@@ -87,7 +87,7 @@ public class ChatService : IChatService
         var editorIds = messages.Where(m => m.EditedUserId.HasValue).Select(m => m.EditedUserId!.Value).Distinct().ToList();
         var readers = reads.Select(r => r.UserId).Distinct().ToList();
         var userIds = senderIds.Union(editorIds).Union(readers).Distinct().ToList();
-        var users = (await _usuarioRepositorio.FindAsync(u => userIds.Contains(u.Id))).ToDictionary(u => u.Id);
+        var users = (await _usuarioRepositorio.FindByIdsWithActorAsync(userIds)).ToDictionary(u => u.Id);
 
         var editWindowCutoff = DateTime.UtcNow.AddMinutes(-_messageEditWindowMinutes);
 

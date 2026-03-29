@@ -13,4 +13,6 @@ public class CreateNoteRequestDto
     public DateTime? DueDate { get; set; }
     /// <summary>ActorId of the entity that owns this note (Staff/Client). Null or 0 means owner = creator.</summary>
     public int? OwnerActorId { get; set; }
+    /// <summary>Optional section identifier (e.g. 1 = PM tab). Null means no section.</summary>
+    public int? SectionId { get; set; }
 }

@@ -1,0 +1,9 @@
+namespace TherapuHubAPI.DTOs.Responses.GoalTracker;
+
+public class GoalTrackerCategoryResponseDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
+    public int? DisplayOrder { get; set; }
+    public bool? IsActive { get; set; }
+}

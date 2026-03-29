@@ -34,6 +34,15 @@ public class UsuarioRepositorio : Repository<Users>, IUsuarioRepositorio
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Users>> FindByIdsWithActorAsync(IEnumerable<int> ids)
+    {
+        var idList = ids.ToList();
+        return await _dbSet
+            .Include(u => u.Actor)
+            .Where(u => idList.Contains(u.Id))
+            .ToListAsync();
+    }
+
     public async Task<int> CountByTipoUsuarioIdAsync(int tipoUsuarioId)
     {
         return await _dbSet

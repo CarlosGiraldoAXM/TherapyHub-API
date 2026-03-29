@@ -41,6 +41,10 @@ builder.Services.AddScoped<IFolderRepositorio, FolderRepositorio>();
 builder.Services.AddScoped<IFileRepositorio, FileRepositorio>();
 builder.Services.AddScoped<IClientRepositorio, ClientRepositorio>();
 builder.Services.AddScoped<IClientStatusRepositorio, ClientStatusRepositorio>();
+builder.Services.AddScoped<IGoalTrackerStatusRepositorio, GoalTrackerStatusRepositorio>();
+builder.Services.AddScoped<IGoalTrackerCategoriesRepositorio, GoalTrackerCategoriesRepositorio>();
+builder.Services.AddScoped<IGoalTrackersRepositorio, GoalTrackersRepositorio>();
+builder.Services.AddScoped<IGoalTrackerItemsRepositorio, GoalTrackerItemsRepositorio>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -57,6 +61,9 @@ builder.Services.AddScoped<IEntityFilesService, EntityFilesService>();
 builder.Services.AddScoped<IStaffDocumentService, StaffDocumentService>();
 builder.Services.AddScoped<INotesService, NotesService>();
 builder.Services.AddScoped<IClientService, ClientService>();
+builder.Services.AddScoped<IGoalTrackerStatusService, GoalTrackerStatusService>();
+builder.Services.AddScoped<IGoalTrackerService, GoalTrackerService>();
+builder.Services.AddScoped<ISessionNotesService, SessionNotesService>();
 builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
 
 // AutoMapper
@@ -158,7 +165,41 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+//====================ENTORNO LOCAL====================
 // Configure the HTTP request pipeline.
+//app.UseSwagger();
+///*app.UseSwaggerUI(c =>
+//{
+//    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TherapuHub API v1");
+//    c.RoutePrefix = "swagger";
+//});*/
+
+
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI();
+//}
+
+//// CORS debe estar antes de UseHttpsRedirection para que funcione correctamente
+//app.UseCors("AllowFrontend");
+
+//// Solo redirigir HTTPS en producción, no en desarrollo
+//if (!app.Environment.IsDevelopment())
+//{
+//    app.UseHttpsRedirection();
+//}
+
+////app.Urls.Add("http://0.0.0.0:8080");
+
+//app.UseAuthentication();
+//app.UseAuthorization();
+
+//app.MapControllers();
+
+//app.Run();
+//====================FIN ENTORNO LOCAL====================
+//====================FIN ENTORNO PUBLICADO====================
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -166,21 +207,7 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-/*
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-*/
-// CORS debe estar antes de UseHttpsRedirection para que funcione correctamente
 app.UseCors("AllowFrontend");
-
-// Solo redirigir HTTPS en producción, no en desarrollo
-if (!app.Environment.IsDevelopment())
-{
-    //app.UseHttpsRedirection();
-}
 
 app.Urls.Add("http://0.0.0.0:8080");
 
@@ -190,3 +217,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+//====================FIN ENTORNO PUBLICADO====================

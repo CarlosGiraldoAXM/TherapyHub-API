@@ -6,7 +6,7 @@ namespace TherapuHubAPI.Services.IServices;
 public interface IFolderService
 {
     // Folders
-    Task<IEnumerable<FolderResponseDto>> GetFoldersByTypeAsync(int companyId, byte folderTypeId, int actorId, int userTypeId);
+    Task<IEnumerable<FolderResponseDto>> GetFoldersByTypeAsync(int companyId, byte folderTypeId, int actorId, int userTypeId, int? sectionId = null);
     Task<IEnumerable<FolderResponseDto>> GetSubfoldersAsync(int parentFolderId, int companyId, int actorId, int userTypeId);
     Task<FolderResponseDto?> GetFolderByIdAsync(int id, int companyId);
     Task<FolderResponseDto> CreateFolderAsync(CreateFolderRequestDto request, int companyId, int actorId, int userTypeId);

@@ -16,5 +16,6 @@ public class FolderResponseDto
     public bool IsGlobal { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsActive { get; set; }
+    public int? SectionId { get; set; }
     public int FileCount { get; set; }
 }

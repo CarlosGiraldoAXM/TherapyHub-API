@@ -15,6 +15,8 @@ public partial class ContextDB : DbContext
     {
     }
 
+    public virtual DbSet<ActorRelationships> ActorRelationships { get; set; }
+
     public virtual DbSet<Actors> Actors { get; set; }
 
     public virtual DbSet<ChatMessages> ChatMessages { get; set; }
@@ -41,6 +43,14 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<Folders> Folders { get; set; }
 
+    public virtual DbSet<GoalTrackerCategories> GoalTrackerCategories { get; set; }
+
+    public virtual DbSet<GoalTrackerItems> GoalTrackerItems { get; set; }
+
+    public virtual DbSet<GoalTrackerStatus> GoalTrackerStatus { get; set; }
+
+    public virtual DbSet<GoalTrackers> GoalTrackers { get; set; }
+
     public virtual DbSet<JobTitles> JobTitles { get; set; }
 
     public virtual DbSet<Menus> Menus { get; set; }
@@ -54,6 +64,10 @@ public partial class ContextDB : DbContext
     public virtual DbSet<NoteTypes> NoteTypes { get; set; }
 
     public virtual DbSet<Notes> Notes { get; set; }
+
+    public virtual DbSet<SessionNotesStatus> SessionNotesStatus { get; set; }
+
+    public virtual DbSet<SessionsNotes> SessionsNotes { get; set; }
 
     public virtual DbSet<Staff> Staff { get; set; }
 
@@ -85,6 +99,13 @@ public partial class ContextDB : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ActorRelationships>(entity =>
+        {
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysdatetime())");
+        });
+
         modelBuilder.Entity<Actors>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Actors__3214EC07800CDA63");
@@ -271,6 +292,49 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.Path).HasMaxLength(500);
         });
 
+        modelBuilder.Entity<GoalTrackerCategories>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<GoalTrackerItems>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__GoalTrac__3214EC07E07E4273");
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.MasteryCriteria).HasMaxLength(100);
+            entity.Property(e => e.Name).HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<GoalTrackerStatus>(entity =>
+        {
+            entity.Property(e => e.Color)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.DeleteAt).HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<GoalTrackers>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__GoalTrac__3214EC077E5C6660");
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.DeleteAt).HasColumnType("datetime");
+        });
+
         modelBuilder.Entity<JobTitles>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__JobTitle__3214EC076C5254CF");
@@ -342,6 +406,34 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.DueDate).HasPrecision(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Title).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<SessionNotesStatus>(entity =>
+        {
+            entity.Property(e => e.Color)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.DeleteAt).HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<SessionsNotes>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_Sessions");
+
+            entity.Property(e => e.Actions).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.DeletedAt).HasPrecision(0);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.SessionDate).HasPrecision(0);
         });
 
         modelBuilder.Entity<Staff>(entity =>

@@ -71,7 +71,8 @@ public class NotesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<IEnumerable<NoteResponseDto>>>> GetByOwner(
         [FromQuery] int menuId,
-        [FromQuery] int? ownerActorId)
+        [FromQuery] int? ownerActorId,
+        [FromQuery] int? sectionId)
     {
         var companyId = GetCompanyId();
         if (companyId == null)
@@ -90,7 +91,7 @@ public class NotesController : ControllerBase
             resolvedOwnerActorId = actorId.Value;
         }
 
-        var result = await _notesService.GetByOwnerAsync(companyId.Value, menuId, resolvedOwnerActorId);
+        var result = await _notesService.GetByOwnerAsync(companyId.Value, menuId, resolvedOwnerActorId, sectionId);
         return Ok(ApiResponse<IEnumerable<NoteResponseDto>>.SuccessResponse(result, "Notes retrieved successfully", 200));
     }
 
