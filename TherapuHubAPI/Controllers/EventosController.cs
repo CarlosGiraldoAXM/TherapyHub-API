@@ -127,4 +127,28 @@ public class EventosController : ControllerBase
             Message = "Event deleted successfully."
         });
     }
+
+    /// <summary>
+    /// Returns public (non-private) events for a delegated user's calendar.
+    /// The requester must have a USER_DELEGATE (type-2) relationship with the target actor.
+    /// </summary>
+    [HttpGet("delegated/{targetActorId}")]
+    public async Task<ActionResult<ApiResponse<IEnumerable<EventoResponseDto>>>> GetDelegatedCalendar(
+        int targetActorId,
+        [FromQuery] DateTime? start,
+        [FromQuery] DateTime? end)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null) return Unauthorized();
+        int currentUserId = int.Parse(userIdClaim.Value);
+
+        var eventos = await _eventosService.GetDelegatedCalendarAsync(currentUserId, targetActorId, start, end);
+
+        return Ok(new ApiResponse<IEnumerable<EventoResponseDto>>
+        {
+            Success = true,
+            Data = eventos,
+            Message = "Delegated calendar retrieved"
+        });
+    }
 }

@@ -12,4 +12,6 @@ public partial class ActorRelationships
     public int TargetActorId { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public int RelationshipTypeId { get; set; }
 }

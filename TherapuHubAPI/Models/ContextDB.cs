@@ -65,6 +65,8 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<Notes> Notes { get; set; }
 
+    public virtual DbSet<RelationshipType> RelationshipType { get; set; }
+
     public virtual DbSet<SessionNotesStatus> SessionNotesStatus { get; set; }
 
     public virtual DbSet<SessionsNotes> SessionsNotes { get; set; }
@@ -406,6 +408,13 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.DueDate).HasPrecision(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Title).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<RelationshipType>(entity =>
+        {
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<SessionNotesStatus>(entity =>

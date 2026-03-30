@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using TherapuHubAPI.DTOs.Requests.Events;
 using TherapuHubAPI.DTOs.Responses.Events;
 using TherapuHubAPI.Models;
@@ -13,12 +14,14 @@ public class EventosService : IEventosService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUsuarioRepositorio _usuarioRepositorio;
     private readonly IMapper _mapper;
+    private readonly ContextDB _context;
 
-    public EventosService(IUnitOfWork unitOfWork, IUsuarioRepositorio usuarioRepositorio, IMapper mapper)
+    public EventosService(IUnitOfWork unitOfWork, IUsuarioRepositorio usuarioRepositorio, IMapper mapper, ContextDB context)
     {
         _unitOfWork = unitOfWork;
         _usuarioRepositorio = usuarioRepositorio;
         _mapper = mapper;
+        _context = context;
     }
 
     public async Task<IEnumerable<EventoResponseDto>> GetEventosByUserAsync(int userId, DateTime? start, DateTime? end, bool? esTodoElDia = null)
@@ -168,5 +171,52 @@ public class EventosService : IEventosService
 
         _unitOfWork.Events.Remove(evento);
         return await _unitOfWork.SaveChangesAsync() > 0;
+    }
+
+    /// <summary>
+    /// Returns public (IsPrivate != true) events for a target user.
+    /// Requires a type-2 (USER_DELEGATE) relationship from requesterActorId → targetActorId.
+    /// </summary>
+    public async Task<IEnumerable<EventoResponseDto>> GetDelegatedCalendarAsync(
+        int currentUserId, int targetActorId, DateTime? start, DateTime? end)
+    {
+        const int typeUserDelegate = 2;
+
+        // Resolve requester's actorId from userId
+        var requester = await _usuarioRepositorio.GetByIdAsync(currentUserId);
+        if (requester == null) return Array.Empty<EventoResponseDto>();
+
+        // Security: verify the requester has a type-2 relationship with the target
+        var relationshipExists = await _context.ActorRelationships
+            .AnyAsync(r => r.SourceActorId == requester.ActorId
+                        && r.TargetActorId == targetActorId
+                        && r.RelationshipTypeId == typeUserDelegate);
+
+        if (!relationshipExists) return Array.Empty<EventoResponseDto>();
+
+        // Resolve target's userId and companyId
+        var targetUser = await _context.Users
+            .Join(_context.Actors, u => u.ActorId, a => a.Id, (u, a) => new { User = u, Actor = a })
+            .FirstOrDefaultAsync(x => x.Actor.Id == targetActorId && !x.Actor.IsDeleted);
+
+        if (targetUser == null) return Array.Empty<EventoResponseDto>();
+
+        var eventos = await _unitOfWork.Events.GetPublicEventosByUserAsync(
+            targetUser.User.Id, targetUser.Actor.CompanyId, start, end);
+
+        var typeIds = eventos.Select(e => e.EventTypeId).Distinct().ToList();
+        var types = (await _unitOfWork.EventTypes.FindAsync(t => typeIds.Contains(t.Id)))
+            .ToDictionary(t => t.Id);
+
+        return eventos.Select(evento =>
+        {
+            var dto = _mapper.Map<EventoResponseDto>(evento);
+            if (types.TryGetValue(evento.EventTypeId, out var t))
+            {
+                dto.TipoEventoNombre = t.Name;
+                dto.TipoEventoColor = t.Color;
+            }
+            return dto;
+        }).ToList();
     }
 }

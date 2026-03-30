@@ -64,6 +64,7 @@ builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IGoalTrackerStatusService, GoalTrackerStatusService>();
 builder.Services.AddScoped<IGoalTrackerService, GoalTrackerService>();
 builder.Services.AddScoped<ISessionNotesService, SessionNotesService>();
+builder.Services.AddScoped<IActorRelationshipService, ActorRelationshipService>();
 builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
 
 // AutoMapper
@@ -166,13 +167,8 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 //====================ENTORNO LOCAL====================
-// Configure the HTTP request pipeline.
+//// Configure the HTTP request pipeline.
 //app.UseSwagger();
-///*app.UseSwaggerUI(c =>
-//{
-//    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TherapuHub API v1");
-//    c.RoutePrefix = "swagger";
-//});*/
 
 
 //if (app.Environment.IsDevelopment())
@@ -190,14 +186,13 @@ var app = builder.Build();
 //    app.UseHttpsRedirection();
 //}
 
-////app.Urls.Add("http://0.0.0.0:8080");
-
 //app.UseAuthentication();
 //app.UseAuthorization();
 
 //app.MapControllers();
 
 //app.Run();
+
 //====================FIN ENTORNO LOCAL====================
 //====================FIN ENTORNO PUBLICADO====================
 app.UseSwagger();

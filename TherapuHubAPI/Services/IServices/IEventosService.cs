@@ -6,6 +6,7 @@ namespace TherapuHubAPI.Services.IServices;
 public interface IEventosService
 {
     Task<IEnumerable<EventoResponseDto>> GetEventosByUserAsync(int userId, DateTime? start, DateTime? end, bool? esTodoElDia = null);
+    Task<IEnumerable<EventoResponseDto>> GetDelegatedCalendarAsync(int currentUserId, int targetActorId, DateTime? start, DateTime? end);
     Task<EventoResponseDto?> GetEventoByIdAsync(int id, int currentUserId);
     Task<EventoResponseDto> CreateEventoAsync(CreateEventoRequestDto request, int currentUserId);
     Task<bool> UpdateEventoAsync(int id, UpdateEventoRequestDto request, int currentUserId);

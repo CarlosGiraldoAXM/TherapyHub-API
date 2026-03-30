@@ -39,7 +39,7 @@ public class SessionNotesService : ISessionNotesService
         {
             var userActorId = user.ActorId;
             var targetActorIds = await _context.ActorRelationships
-                .Where(r => r.SourceActorId == userActorId)
+                .Where(r => r.SourceActorId == userActorId && r.RelationshipTypeId == 1)
                 .Select(r => r.TargetActorId)
                 .ToListAsync();
 

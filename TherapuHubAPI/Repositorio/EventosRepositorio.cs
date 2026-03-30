@@ -43,4 +43,21 @@ public class EventosRepositorio : Repository<Events>, IEventosRepositorio
 
         return await query.ToListAsync();
     }
+
+    public async Task<IEnumerable<Events>> GetPublicEventosByUserAsync(int userId, int userCompaniaId, DateTime? start, DateTime? end)
+    {
+        var query = _contextDb.Events
+            .Where(e => e.IsPrivate != true)
+            .Where(e =>
+                (e.IsGlobal && e.CompanyId == userCompaniaId) ||
+                (!e.IsGlobal && _contextDb.EventUsers.Any(eu => eu.EventId == e.Id && eu.UserId == userId)));
+
+        if (start.HasValue)
+            query = query.Where(e => e.StartDate >= start.Value);
+
+        if (end.HasValue)
+            query = query.Where(e => e.EndDate <= end.Value);
+
+        return await query.ToListAsync();
+    }
 }
