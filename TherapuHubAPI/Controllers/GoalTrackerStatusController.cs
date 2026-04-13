@@ -140,6 +140,28 @@ public class GoalTrackerStatusController : ControllerBase
         }
     }
 
+    [HttpPatch("{id:int}/move-up")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>>> MoveUp(int id)
+    {
+        var result = await _service.MoveAsync(id, "up");
+        if (result == null)
+            return NotFound(ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>.ErrorResponse("Goal tracker status not found", null, 404));
+        return Ok(ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>.SuccessResponse(result, "Status moved up successfully"));
+    }
+
+    [HttpPatch("{id:int}/move-down")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>>> MoveDown(int id)
+    {
+        var result = await _service.MoveAsync(id, "down");
+        if (result == null)
+            return NotFound(ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>.ErrorResponse("Goal tracker status not found", null, 404));
+        return Ok(ApiResponse<IEnumerable<GoalTrackerStatusResponseDto>>.SuccessResponse(result, "Status moved down successfully"));
+    }
+
     [HttpPatch("{id:int}/toggle-active")]
     [ProducesResponseType(typeof(ApiResponse<GoalTrackerStatusResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<GoalTrackerStatusResponseDto>), StatusCodes.Status404NotFound)]

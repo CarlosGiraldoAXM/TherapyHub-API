@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TherapuHubAPI.DTOs.Common;
@@ -30,7 +31,14 @@ public class ClientsController : ControllerBase
         return companyId;
     }
 
-    /// <summary>Get all clients for the current company.</summary>
+    private int? GetUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (claim == null || !int.TryParse(claim.Value, out var id)) return null;
+        return id;
+    }
+
+    /// <summary>Get all clients for the current company. System users see all; others see only clients with no RBT or where the RBT is related to them.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ClientResponseDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<IEnumerable<ClientResponseDto>>>> GetAll()
@@ -39,7 +47,11 @@ public class ClientsController : ControllerBase
         if (companyId == null)
             return Unauthorized(ApiResponse<IEnumerable<ClientResponseDto>>.ErrorResponse("CompanyId not found", null, 401));
 
-        var result = await _clientService.GetByCompanyIdAsync(companyId.Value);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<IEnumerable<ClientResponseDto>>.ErrorResponse("UserId not found", null, 401));
+
+        var result = await _clientService.GetByCompanyIdAsync(companyId.Value, userId.Value);
         return Ok(ApiResponse<IEnumerable<ClientResponseDto>>.SuccessResponse(result, "Clients retrieved successfully", 200));
     }
 

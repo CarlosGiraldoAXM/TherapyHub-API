@@ -42,6 +42,7 @@ builder.Services.AddScoped<IFileRepositorio, FileRepositorio>();
 builder.Services.AddScoped<IClientRepositorio, ClientRepositorio>();
 builder.Services.AddScoped<IClientStatusRepositorio, ClientStatusRepositorio>();
 builder.Services.AddScoped<IGoalTrackerStatusRepositorio, GoalTrackerStatusRepositorio>();
+builder.Services.AddScoped<ISessionNotesStatusRepositorio, SessionNotesStatusRepositorio>();
 builder.Services.AddScoped<IGoalTrackerCategoriesRepositorio, GoalTrackerCategoriesRepositorio>();
 builder.Services.AddScoped<IGoalTrackersRepositorio, GoalTrackersRepositorio>();
 builder.Services.AddScoped<IGoalTrackerItemsRepositorio, GoalTrackerItemsRepositorio>();
@@ -62,9 +63,11 @@ builder.Services.AddScoped<IStaffDocumentService, StaffDocumentService>();
 builder.Services.AddScoped<INotesService, NotesService>();
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IGoalTrackerStatusService, GoalTrackerStatusService>();
+builder.Services.AddScoped<ISessionNotesStatusService, SessionNotesStatusService>();
 builder.Services.AddScoped<IGoalTrackerService, GoalTrackerService>();
 builder.Services.AddScoped<ISessionNotesService, SessionNotesService>();
 builder.Services.AddScoped<IActorRelationshipService, ActorRelationshipService>();
+builder.Services.AddScoped<INoteCategoryService, NoteCategoryService>();
 builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
 
 // AutoMapper
@@ -109,12 +112,16 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "http://localhost:8080",
+                "http://localhost:8082",
                 "http://localhost:5173",
                 "https://localhost:8080",
+                "https://localhost:8082",
                 "https://localhost:5173",
                 "http://127.0.0.1:8080",
+                "http://127.0.0.1:8082",
                 "http://127.0.0.1:5173",
                 "https://127.0.0.1:8080",
+                "https://127.0.0.1:8082",
                 "https://127.0.0.1:5173",
                 "https://therapyhub-suite.vercel.app"
               )
@@ -167,7 +174,7 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 //====================ENTORNO LOCAL====================
-//// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline.
 //app.UseSwagger();
 
 

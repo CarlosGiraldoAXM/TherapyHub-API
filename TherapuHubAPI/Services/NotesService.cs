@@ -17,16 +17,20 @@ public class NotesService : INotesService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<NoteResponseDto>> GetByOwnerAsync(int companyId, int menuId, int ownerActorId, int? sectionId = null)
+    public async Task<IEnumerable<NoteResponseDto>> GetByOwnerAsync(int companyId, int menuId, int ownerActorId, int currentUserActorId, int? sectionId = null)
     {
         var notes = await _context.Notes
-            .Where(n => n.CompanyId == companyId && n.MenuId == menuId && n.OwnerActorId == ownerActorId
-                        && (sectionId == null ? n.SectionId == null : n.SectionId == sectionId))
+            .Where(n => n.CompanyId == companyId
+                     && n.MenuId == menuId
+                     && n.OwnerActorId == ownerActorId
+                     && (sectionId == null ? n.SectionId == null : n.SectionId == sectionId)
+                     && (!n.IsPrivate || n.CreatedByActorId == currentUserActorId))
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync();
 
         var priorities = await _context.NotePriorities.ToListAsync();
-        return notes.Select(n => MapToDto(n, priorities));
+        var categories = await _context.NoteCategories.Where(c => c.CompanyId == companyId).ToListAsync();
+        return notes.Select(n => MapToDto(n, priorities, categories));
     }
 
     public async Task<NoteResponseDto?> GetByIdAsync(long id, int companyId)
@@ -36,7 +40,8 @@ public class NotesService : INotesService
         if (note == null) return null;
 
         var priorities = await _context.NotePriorities.ToListAsync();
-        return MapToDto(note, priorities);
+        var categories = await _context.NoteCategories.Where(c => c.CompanyId == companyId).ToListAsync();
+        return MapToDto(note, priorities, categories);
     }
 
     public async Task<NoteResponseDto> CreateAsync(CreateNoteRequestDto dto, int companyId, int createdByActorId)
@@ -63,13 +68,16 @@ public class NotesService : INotesService
             DueDate = dto.DueDate,
             CreatedAt = DateTime.UtcNow,
             IsActive = true,
+            IsPrivate = dto.IsPrivate,
+            CategoryId = dto.CategoryId,
         };
 
         _context.Notes.Add(note);
         await _context.SaveChangesAsync();
 
         var priorities = await _context.NotePriorities.ToListAsync();
-        return MapToDto(note, priorities);
+        var categories = await _context.NoteCategories.Where(c => c.CompanyId == companyId).ToListAsync();
+        return MapToDto(note, priorities, categories);
     }
 
     public async Task<NoteResponseDto?> UpdateAsync(long id, UpdateNoteRequestDto dto, int companyId)
@@ -86,11 +94,14 @@ public class NotesService : INotesService
         note.PriorityId = dto.PriorityId;
         note.DueDate = dto.DueDate;
         note.IsActive = dto.IsActive;
+        note.IsPrivate = dto.IsPrivate;
+        note.CategoryId = dto.CategoryId;
 
         await _context.SaveChangesAsync();
 
         var priorities = await _context.NotePriorities.ToListAsync();
-        return MapToDto(note, priorities);
+        var categories = await _context.NoteCategories.Where(c => c.CompanyId == companyId).ToListAsync();
+        return MapToDto(note, priorities, categories);
     }
 
     public async Task<bool> DeleteAsync(long id, int companyId)
@@ -129,9 +140,10 @@ public class NotesService : INotesService
             .ToListAsync();
     }
 
-    private static NoteResponseDto MapToDto(Notes note, IEnumerable<NotePriorities> priorities)
+    private static NoteResponseDto MapToDto(Notes note, IEnumerable<NotePriorities> priorities, IEnumerable<NoteCategories> categories)
     {
         var priority = priorities.FirstOrDefault(p => p.Id == note.PriorityId);
+        var category = note.CategoryId.HasValue ? categories.FirstOrDefault(c => c.Id == note.CategoryId.Value) : null;
         return new NoteResponseDto
         {
             Id = note.Id,
@@ -148,6 +160,9 @@ public class NotesService : INotesService
             CreatedAt = note.CreatedAt,
             IsActive = note.IsActive,
             SectionId = note.SectionId,
+            IsPrivate = note.IsPrivate,
+            CategoryId = note.CategoryId,
+            CategoryName = category?.Name,
         };
     }
 }

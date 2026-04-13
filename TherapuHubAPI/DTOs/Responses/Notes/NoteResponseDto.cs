@@ -16,4 +16,7 @@ public class NoteResponseDto
     public DateTime CreatedAt { get; set; }
     public bool IsActive { get; set; }
     public int? SectionId { get; set; }
+    public bool IsPrivate { get; set; }
+    public int? CategoryId { get; set; }
+    public string? CategoryName { get; set; }
 }

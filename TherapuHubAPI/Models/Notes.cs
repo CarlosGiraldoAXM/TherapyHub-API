@@ -30,4 +30,8 @@ public partial class Notes
     public int MenuId { get; set; }
 
     public int? SectionId { get; set; }
+
+    public bool IsPrivate { get; set; }
+
+    public int? CategoryId { get; set; }
 }

@@ -20,13 +20,13 @@ public class GoalTrackerStatusService : IGoalTrackerStatusService
     public async Task<IEnumerable<GoalTrackerStatusResponseDto>> GetAllAsync()
     {
         var statuses = await _unitOfWork.GoalTrackerStatuses.FindAsync(s => s.IsDelete != true);
-        return statuses.Select(MapToDto);
+        return statuses.OrderBy(s => s.SortOrder ?? int.MaxValue).ThenBy(s => s.Id).Select(MapToDto);
     }
 
     public async Task<IEnumerable<GoalTrackerStatusResponseDto>> GetActiveAsync()
     {
         var statuses = await _unitOfWork.GoalTrackerStatuses.FindAsync(s => s.IsDelete != true && s.IsActive);
-        return statuses.Select(MapToDto);
+        return statuses.OrderBy(s => s.SortOrder ?? int.MaxValue).ThenBy(s => s.Id).Select(MapToDto);
     }
 
     public async Task<GoalTrackerStatusResponseDto?> GetByIdAsync(int id)
@@ -38,6 +38,9 @@ public class GoalTrackerStatusService : IGoalTrackerStatusService
 
     public async Task<GoalTrackerStatusResponseDto> CreateAsync(CreateGoalTrackerStatusRequestDto dto, int actorId)
     {
+        var all = await _unitOfWork.GoalTrackerStatuses.FindAsync(s => s.IsDelete != true);
+        var maxSort = all.Any() ? all.Max(s => s.SortOrder ?? 0) : 0;
+
         var entity = new GoalTrackerStatus
         {
             Name = dto.Name.Trim(),
@@ -45,6 +48,7 @@ public class GoalTrackerStatusService : IGoalTrackerStatusService
             IsActive = dto.IsActive,
             ActorCreatedId = actorId,
             CreatedAt = DateTime.UtcNow,
+            SortOrder = maxSort + 1,
         };
         await _unitOfWork.GoalTrackerStatuses.AddAsync(entity);
         await _unitOfWork.SaveChangesAsync();
@@ -88,12 +92,49 @@ public class GoalTrackerStatusService : IGoalTrackerStatusService
         return MapToDto(entity);
     }
 
+    public async Task<IEnumerable<GoalTrackerStatusResponseDto>?> MoveAsync(int id, string direction)
+    {
+        var all = (await _unitOfWork.GoalTrackerStatuses.FindAsync(s => s.IsDelete != true))
+            .OrderBy(s => s.SortOrder ?? int.MaxValue).ThenBy(s => s.Id).ToList();
+
+        var index = all.FindIndex(s => s.Id == id);
+        if (index < 0) return null;
+
+        int swapIndex = direction == "up" ? index - 1 : index + 1;
+        if (swapIndex < 0 || swapIndex >= all.Count) return ImmutableResults(all);
+
+        var target = all[index];
+        var neighbor = all[swapIndex];
+
+        // Ensure both have numeric SortOrder before swapping
+        if (target.SortOrder == null || neighbor.SortOrder == null)
+        {
+            // Assign sequential SortOrder to all first
+            for (int i = 0; i < all.Count; i++) all[i].SortOrder = i + 1;
+            _unitOfWork.GoalTrackerStatuses.Update(all[index]);
+            _unitOfWork.GoalTrackerStatuses.Update(all[swapIndex]);
+        }
+
+        (target.SortOrder, neighbor.SortOrder) = (neighbor.SortOrder, target.SortOrder);
+        _unitOfWork.GoalTrackerStatuses.Update(target);
+        _unitOfWork.GoalTrackerStatuses.Update(neighbor);
+        await _unitOfWork.SaveChangesAsync();
+
+        all = (await _unitOfWork.GoalTrackerStatuses.FindAsync(s => s.IsDelete != true))
+            .OrderBy(s => s.SortOrder ?? int.MaxValue).ThenBy(s => s.Id).ToList();
+        return all.Select(MapToDto);
+    }
+
+    private static IEnumerable<GoalTrackerStatusResponseDto> ImmutableResults(List<GoalTrackerStatus> list)
+        => list.Select(MapToDto);
+
     private static GoalTrackerStatusResponseDto MapToDto(GoalTrackerStatus s) => new()
     {
         Id = s.Id,
         Name = s.Name,
         Color = s.Color,
         IsActive = s.IsActive,
+        SortOrder = s.SortOrder,
         CreatedAt = s.CreatedAt,
     };
 }

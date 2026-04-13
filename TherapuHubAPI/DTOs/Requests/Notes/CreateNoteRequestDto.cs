@@ -15,4 +15,8 @@ public class CreateNoteRequestDto
     public int? OwnerActorId { get; set; }
     /// <summary>Optional section identifier (e.g. 1 = PM tab). Null means no section.</summary>
     public int? SectionId { get; set; }
+    /// <summary>When true, only the creator can see this note.</summary>
+    public bool IsPrivate { get; set; } = false;
+    /// <summary>Optional category. Only used in sections that allow categories.</summary>
+    public int? CategoryId { get; set; }
 }

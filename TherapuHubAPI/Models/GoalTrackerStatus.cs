@@ -22,4 +22,6 @@ public partial class GoalTrackerStatus
     public DateTime? DeleteAt { get; set; }
 
     public int? DeletedActorId { get; set; }
+
+    public int? SortOrder { get; set; }
 }

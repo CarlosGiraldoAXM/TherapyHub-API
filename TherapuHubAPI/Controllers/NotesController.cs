@@ -78,20 +78,15 @@ public class NotesController : ControllerBase
         if (companyId == null)
             return Unauthorized(ApiResponse<IEnumerable<NoteResponseDto>>.ErrorResponse("CompanyId not found", null, 401));
 
-        int resolvedOwnerActorId;
-        if (ownerActorId.HasValue && ownerActorId.Value != 0)
-        {
-            resolvedOwnerActorId = ownerActorId.Value;
-        }
-        else
-        {
-            var actorId = await GetActorIdAsync();
-            if (actorId == null)
-                return Unauthorized(ApiResponse<IEnumerable<NoteResponseDto>>.ErrorResponse("Actor not found", null, 401));
-            resolvedOwnerActorId = actorId.Value;
-        }
+        var currentActorId = await GetActorIdAsync();
+        if (currentActorId == null)
+            return Unauthorized(ApiResponse<IEnumerable<NoteResponseDto>>.ErrorResponse("Actor not found", null, 401));
 
-        var result = await _notesService.GetByOwnerAsync(companyId.Value, menuId, resolvedOwnerActorId, sectionId);
+        int resolvedOwnerActorId = (ownerActorId.HasValue && ownerActorId.Value != 0)
+            ? ownerActorId.Value
+            : currentActorId.Value;
+
+        var result = await _notesService.GetByOwnerAsync(companyId.Value, menuId, resolvedOwnerActorId, currentActorId.Value, sectionId);
         return Ok(ApiResponse<IEnumerable<NoteResponseDto>>.SuccessResponse(result, "Notes retrieved successfully", 200));
     }
 

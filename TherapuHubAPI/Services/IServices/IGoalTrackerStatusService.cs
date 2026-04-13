@@ -12,4 +12,5 @@ public interface IGoalTrackerStatusService
     Task<GoalTrackerStatusResponseDto?> UpdateAsync(int id, UpdateGoalTrackerStatusRequestDto dto);
     Task<bool> DeleteAsync(int id, int actorId);
     Task<GoalTrackerStatusResponseDto?> ToggleActiveAsync(int id);
+    Task<IEnumerable<GoalTrackerStatusResponseDto>?> MoveAsync(int id, string direction);
 }

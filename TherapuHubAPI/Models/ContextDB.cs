@@ -57,6 +57,8 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<MessageReads> MessageReads { get; set; }
 
+    public virtual DbSet<NoteCategories> NoteCategories { get; set; }
+
     public virtual DbSet<NotePriorities> NotePriorities { get; set; }
 
     public virtual DbSet<NoteSections> NoteSections { get; set; }
@@ -373,6 +375,20 @@ public partial class ContextDB : DbContext
             entity.Property(e => e.ReadAt)
                 .HasPrecision(3)
                 .HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<NoteCategories>(entity =>
+        {
+            entity.HasNoKey();
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<NotePriorities>(entity =>

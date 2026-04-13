@@ -7,4 +7,6 @@ public class UpdateNoteRequestDto
     public byte PriorityId { get; set; }
     public DateTime? DueDate { get; set; }
     public bool IsActive { get; set; }
+    public bool IsPrivate { get; set; }
+    public int? CategoryId { get; set; }
 }
