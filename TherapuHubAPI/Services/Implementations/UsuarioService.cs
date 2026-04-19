@@ -371,6 +371,7 @@ public class UsuarioService : IUsuarioService
     private static UsuarioResponseDto MapToResponseDto(Users u) => new()
     {
         Id = u.Id,
+        ActorId = u.ActorId,
         Correo = u.Actor?.Email ?? string.Empty,
         Nombre = u.Actor?.FullName ?? string.Empty,
         UserTypeId = u.UserTypeId,

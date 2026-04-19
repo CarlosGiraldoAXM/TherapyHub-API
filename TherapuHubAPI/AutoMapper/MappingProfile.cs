@@ -32,6 +32,7 @@ public class MappingProfile : Profile
         // Users: Model (EN) <-> DTO (ES)
         // Note: Email, FullName, CompanyId are now on Actor navigation property
         CreateMap<Users, UsuarioResponseDto>()
+            .ForMember(dest => dest.ActorId, opt => opt.MapFrom(src => src.ActorId))
             .ForMember(dest => dest.Correo, opt => opt.MapFrom(src => src.Actor.Email))
             .ForMember(dest => dest.Nombre, opt => opt.MapFrom(src => src.Actor.FullName))
             .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.Actor.CompanyId))

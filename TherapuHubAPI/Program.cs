@@ -46,6 +46,7 @@ builder.Services.AddScoped<ISessionNotesStatusRepositorio, SessionNotesStatusRep
 builder.Services.AddScoped<IGoalTrackerCategoriesRepositorio, GoalTrackerCategoriesRepositorio>();
 builder.Services.AddScoped<IGoalTrackersRepositorio, GoalTrackersRepositorio>();
 builder.Services.AddScoped<IGoalTrackerItemsRepositorio, GoalTrackerItemsRepositorio>();
+builder.Services.AddScoped<ILibraryItemRepositorio, LibraryItemRepositorio>();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -68,6 +69,7 @@ builder.Services.AddScoped<IGoalTrackerService, GoalTrackerService>();
 builder.Services.AddScoped<ISessionNotesService, SessionNotesService>();
 builder.Services.AddScoped<IActorRelationshipService, ActorRelationshipService>();
 builder.Services.AddScoped<INoteCategoryService, NoteCategoryService>();
+builder.Services.AddScoped<ILibraryItemService, LibraryItemService>();
 builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
 
 // AutoMapper
@@ -174,7 +176,7 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 //====================ENTORNO LOCAL====================
-// Configure the HTTP request pipeline.
+//Configure the HTTP request pipeline.
 //app.UseSwagger();
 
 

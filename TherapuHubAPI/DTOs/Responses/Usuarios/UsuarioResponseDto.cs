@@ -5,6 +5,7 @@ namespace TherapuHubAPI.DTOs.Responses.Users;
 public class UsuarioResponseDto
 {
     public int Id { get; set; }
+    public int ActorId { get; set; }
     public string Correo { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
 

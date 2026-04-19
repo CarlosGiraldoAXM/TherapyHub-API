@@ -53,6 +53,12 @@ public partial class ContextDB : DbContext
 
     public virtual DbSet<JobTitles> JobTitles { get; set; }
 
+    public virtual DbSet<LibraryCategories> LibraryCategories { get; set; }
+
+    public virtual DbSet<LibraryItemFiles> LibraryItemFiles { get; set; }
+
+    public virtual DbSet<LibraryItems> LibraryItems { get; set; }
+
     public virtual DbSet<Menus> Menus { get; set; }
 
     public virtual DbSet<MessageReads> MessageReads { get; set; }
@@ -96,6 +102,8 @@ public partial class ContextDB : DbContext
     public virtual DbSet<UserTypes> UserTypes { get; set; }
 
     public virtual DbSet<Users> Users { get; set; }
+
+    public virtual DbSet<library_permissions> library_permissions { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -355,6 +363,49 @@ public partial class ContextDB : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<LibraryCategories>(entity =>
+        {
+            entity.HasIndex(e => e.Slug, "UQ_LibraryCategories_Slug").IsUnique();
+
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Slug).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<LibraryItemFiles>(entity =>
+        {
+            entity.HasIndex(e => e.LibraryItemId, "IX_LibraryItemFiles_ItemId").HasFilter("([IsDeleted]=(0))");
+
+            entity.HasOne(d => d.LibraryItem).WithMany(p => p.LibraryItemFiles)
+                .HasForeignKey(d => d.LibraryItemId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.Property(e => e.BlobPath).HasMaxLength(1000);
+            entity.Property(e => e.ContentType)
+                .HasMaxLength(200)
+                .HasDefaultValue("");
+            entity.Property(e => e.FileName).HasMaxLength(500);
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("(getutcdate())");
+        });
+
+        modelBuilder.Entity<LibraryItems>(entity =>
+        {
+            entity.HasIndex(e => e.CategoryId, "IX_LibraryItems_CategoryId").HasFilter("([IsDeleted]=(0))");
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.DeletedAt).HasPrecision(0);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(255);
+
+            entity.HasOne(d => d.Category).WithMany(p => p.LibraryItems)
+                .HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LibraryItems_Category");
+        });
+
         modelBuilder.Entity<Menus>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Menus__3214EC07846E3A0D");
@@ -556,6 +607,17 @@ public partial class ContextDB : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Users__3214EC0777CCE6C5");
 
             entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<library_permissions>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("PK__library___3213E83F3BE29BF9");
+
+            entity.HasIndex(e => e.actorId, "UQ_library_permissions_actor").IsUnique();
+
+            entity.Property(e => e.assignedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
         });
