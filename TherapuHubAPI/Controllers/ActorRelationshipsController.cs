@@ -131,6 +131,45 @@ public class ActorRelationshipsController : ControllerBase
         }
     }
 
+    // ─── RBT → Client (type 3) ────────────────────────────────────────────────
+
+    /// <summary>All clients in the company with assignment status for the given RBT.</summary>
+    [HttpGet("{rbtActorId}/clients")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ClientAssignmentResponseDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<ClientAssignmentResponseDto>>>> GetClientsForRbt(int rbtActorId)
+    {
+        var companyId = GetCompanyId();
+        if (companyId == null) return Unauthorized(ApiResponse<object>.ErrorResponse("CompanyId not found", null, 401));
+
+        var result = await _service.GetClientsForRbtAsync(rbtActorId, companyId.Value);
+        return Ok(ApiResponse<IEnumerable<ClientAssignmentResponseDto>>.SuccessResponse(result, "Clients retrieved", 200));
+    }
+
+    /// <summary>Assign a client to an RBT (type 3).</summary>
+    [HttpPost("clients")]
+    [ProducesResponseType(typeof(ApiResponse<ActorRelationshipResponseDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<ActorRelationshipResponseDto>>> AssignClient([FromBody] AssignClientRequestDto request)
+    {
+        var companyId = GetCompanyId();
+        if (companyId == null) return Unauthorized(ApiResponse<object>.ErrorResponse("CompanyId not found", null, 401));
+
+        try
+        {
+            var result = await _service.AssignClientAsync(request, companyId.Value);
+            return StatusCode(201, ApiResponse<ActorRelationshipResponseDto>.SuccessResponse(result, "Client assigned", 201));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message, new List<string> { ex.Message }, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning client");
+            return StatusCode(500, ApiResponse<object>.ErrorResponse("Internal server error", null, 500));
+        }
+    }
+
     // ─── Shared ───────────────────────────────────────────────────────────────
 
     /// <summary>Remove any relationship by id.</summary>

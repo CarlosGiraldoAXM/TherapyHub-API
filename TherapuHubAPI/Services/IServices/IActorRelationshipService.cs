@@ -15,6 +15,10 @@ public interface IActorRelationshipService
     Task<IEnumerable<UserAssignmentResponseDto>> GetUsersForSourceAsync(int sourceActorId, int companyId);
     Task<ActorRelationshipResponseDto> AssignUserAsync(AssignUserRequestDto request, int companyId);
 
+    // RBT → Client (type 3)
+    Task<IEnumerable<ClientAssignmentResponseDto>> GetClientsForRbtAsync(int rbtActorId, int companyId);
+    Task<ActorRelationshipResponseDto> AssignClientAsync(AssignClientRequestDto request, int companyId);
+
     // Shared
     Task<bool> RemoveAssignmentAsync(long relationshipId, int companyId);
 }

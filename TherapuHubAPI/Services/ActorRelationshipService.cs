@@ -11,6 +11,7 @@ public class ActorRelationshipService : IActorRelationshipService
     // Must match RelationshipType table rows
     private const int TypeSupervisorRbt = 1;
     private const int TypeUserDelegate  = 2;
+    private const int TypeRbtClient     = 3;
 
     private readonly ContextDB _context;
     private readonly ILogger<ActorRelationshipService> _logger;
@@ -245,6 +246,84 @@ public class ActorRelationshipService : IActorRelationshipService
             SupervisorActorId = relationship.SourceActorId,
             RbtActorId = relationship.TargetActorId,
             RbtName = targetActor.FullName,
+            RbtStaffId = 0,
+            CreatedAt = relationship.CreatedAt,
+        };
+    }
+
+    // ─── RBT → Client (type 3) ──────────────────────────────────────────────
+
+    public async Task<IEnumerable<ClientAssignmentResponseDto>> GetClientsForRbtAsync(int rbtActorId, int companyId)
+    {
+        var clients = await _context.Clients
+            .Join(_context.Actors, c => c.ActorId, a => a.Id, (c, a) => new { Client = c, Actor = a })
+            .Where(x => x.Actor.CompanyId == companyId && !x.Actor.IsDeleted)
+            .ToListAsync();
+
+        var assignments = await _context.ActorRelationships
+            .Where(r => r.SourceActorId == rbtActorId && r.RelationshipTypeId == TypeRbtClient)
+            .ToListAsync();
+
+        var byActorId = assignments.ToDictionary(r => r.TargetActorId);
+
+        return clients.Select(x =>
+        {
+            byActorId.TryGetValue(x.Actor.Id, out var rel);
+            return new ClientAssignmentResponseDto
+            {
+                ClientId = x.Client.Id,
+                ActorId = x.Actor.Id,
+                FullName = x.Actor.FullName,
+                IsAssigned = rel != null,
+                RelationshipId = rel?.Id,
+            };
+        }).OrderBy(c => c.FullName).ToList();
+    }
+
+    public async Task<ActorRelationshipResponseDto> AssignClientAsync(AssignClientRequestDto request, int companyId)
+    {
+        var rbtActor = await _context.Staff
+            .Where(s => s.ActorId == request.RbtActorId && s.RoleId == 1)
+            .Join(_context.Actors, s => s.ActorId, a => a.Id, (s, a) => new { Staff = s, Actor = a })
+            .FirstOrDefaultAsync(x => x.Actor.CompanyId == companyId && !x.Actor.IsDeleted);
+        if (rbtActor == null)
+            throw new InvalidOperationException("RBT not found in this company.");
+
+        var clientActor = await _context.Clients
+            .Join(_context.Actors, c => c.ActorId, a => a.Id, (c, a) => new { Client = c, Actor = a })
+            .FirstOrDefaultAsync(x => x.Client.ActorId == request.ClientActorId
+                                   && x.Actor.CompanyId == companyId
+                                   && !x.Actor.IsDeleted);
+        if (clientActor == null)
+            throw new InvalidOperationException("Client not found in this company.");
+
+        var exists = await _context.ActorRelationships
+            .AnyAsync(r => r.SourceActorId == request.RbtActorId
+                        && r.TargetActorId == request.ClientActorId
+                        && r.RelationshipTypeId == TypeRbtClient);
+        if (exists)
+            throw new InvalidOperationException("This client is already assigned to the RBT.");
+
+        var relationship = new ActorRelationships
+        {
+            SourceActorId = request.RbtActorId,
+            TargetActorId = request.ClientActorId,
+            RelationshipTypeId = TypeRbtClient,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        _context.ActorRelationships.Add(relationship);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Assigned Client ActorId={ClientId} to RBT ActorId={RbtId}",
+            request.ClientActorId, request.RbtActorId);
+
+        return new ActorRelationshipResponseDto
+        {
+            Id = relationship.Id,
+            SupervisorActorId = relationship.SourceActorId,
+            RbtActorId = relationship.TargetActorId,
+            RbtName = clientActor.Actor.FullName,
             RbtStaffId = 0,
             CreatedAt = relationship.CreatedAt,
         };

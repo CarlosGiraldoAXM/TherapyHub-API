@@ -8,9 +8,9 @@ public class CreateStaffRequestDto
     public string LastName { get; set; } = null!;
     public short RoleId { get; set; }
     public DateOnly? DateOfBirth { get; set; }
-    public string Phone { get; set; } = null!;
+    public string? Phone { get; set; }
     public string? Certifications { get; set; }
-    public string Email { get; set; } = null!;
+    public string? Email { get; set; }
     public byte StatusId { get; set; }
     public DateOnly? ContractDate { get; set; }
 }
